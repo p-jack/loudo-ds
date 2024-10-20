@@ -97,7 +97,7 @@ export abstract class DataStructure<T,I> implements Iterable<T> {
     return [...this]
   }
 
-  static from<T>(iterable:Iterable<T>) {
+  static wrap<T>(iterable:Iterable<T>):DataStructure<T,undefined> {
     return new Wrap(iterable)
   }
 

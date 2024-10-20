@@ -1,16 +1,18 @@
 {
   "name": "loudo-ds-core",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "Core interfaces for loudo data structures.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
+    "README.md",
     "dist/index.js",
     "dist/index.d.ts"
   ],
   "scripts": {
     "build": "tsc",
+    "prepare": "tsc",
     "test": "vitest --coverage"
   },
   "repository": {

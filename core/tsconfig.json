@@ -1,5 +1,5 @@
 {
-  "include":["index.ts", "index.test.ts"],
+  "include":["index.ts"],
   "compilerOptions": {
     "esModuleInterop":true,
     "outDir": "./dist/",
