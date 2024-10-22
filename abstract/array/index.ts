@@ -3,7 +3,7 @@ import { DataStructure, RODataStructure } from "loudo-ds-core"
 export const array = Symbol("array")
 
 export interface ROArray<T> extends RODataStructure<T,number> {
-  [array]:true
+  readonly [array]:true
   at(i:number):T
 }
 
