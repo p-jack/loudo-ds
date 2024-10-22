@@ -1,0 +1,40 @@
+{
+  "name": "loudo-ds-array",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "Loud arrays.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "README.md",
+    "dist/index.js",
+    "dist/index.d.ts"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "tsc",
+    "test": "vitest --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/p-jack/loudo-ds.git"
+  },
+  "author": "Paul Jack",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/p-jack/loudo-ds/issues"
+  },
+  "homepage": "https://github.com/p-jack/loudo-ds#readme",
+  "devDependencies": {
+    "@types/web": "^0.0.138",
+    "@vitest/coverage-v8": "^1.2.2",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.2"
+  },
+  "dependencies": {
+    "loudo-ds-array-interfaces": "^0.0.4",
+    "loudo-ds-core": "^0.0.8",
+    "loudo-ds-ordered": "^0.0.2",
+    "loudo-ds-reversible": "^0.0.2"
+  }
+}
