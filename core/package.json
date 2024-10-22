@@ -1,8 +1,8 @@
 {
   "name": "loudo-ds-core",
   "type": "module",
-  "version": "0.0.4",
-  "description": "Core interfaces for loudo data structures.",
+  "version": "0.0.6",
+  "description": "Core interfaces and classes for loudo data structures.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -17,14 +17,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/p-jack/loudo-ds-core.git"
+    "url": "git+https://github.com/p-jack/loudo-ds.git"
   },
   "author": "Paul Jack",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/p-jack/loudo-ds-core/issues"
+    "url": "https://github.com/p-jack/loudo-ds/issues"
   },
-  "homepage": "https://github.com/p-jack/loudo-ds-core#readme",
+  "homepage": "https://github.com/p-jack/loudo-ds#readme",
   "devDependencies": {
     "@types/web": "^0.0.138",
     "@vitest/coverage-v8": "^1.2.2",

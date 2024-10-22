@@ -4,7 +4,7 @@ export interface BigIterable<T> extends Iterable<T> {
   reduce<A>(a:A, f:(a:A, x:T)=>A):A
 }
 
-function* map<T,R>(i:Iterable<T>, f:(x:T)=>R) {
+function* mapGen<T,R>(i:Iterable<T>, f:(x:T)=>R) {
   for (const x of i) yield f(x)
 }
 
@@ -17,14 +17,14 @@ function reduce<T,A>(i:Iterable<T>, a:A, f:(a:A, x:T)=>A) {
   return a
 }
 
-export function embiggen<T>(i:Iterable<T>):BigIterable<T> {
-  const big:BigIterable<T> = {
+export function big<T>(i:Iterable<T>):BigIterable<T> {
+  const r:BigIterable<T> = {
     [Symbol.iterator]:() => i[Symbol.iterator](),
-    map:<R>(f:(x:T)=>R) => embiggen(map(i, f)),
-    filter:(f:(x:T)=>boolean) => embiggen(filter(i, f)),
+    map:<R>(f:(x:T)=>R) => big(mapGen(i, f)),
+    filter:(f:(x:T)=>boolean) => big(filter(i, f)),
     reduce:<A>(a:A,f:(a:A,x:T)=>A) => reduce(i, a, f),
   }
-  return big
+  return r
 }
 
 
@@ -34,15 +34,15 @@ export interface Mod<T,I> {
   count: number
 }
 
-export interface LEvent<T,I> {
+export interface LEvent<T,I = undefined> {
   readonly cleared:boolean
   readonly added?:Mod<T,I>
   readonly removed?:Mod<T,I>
 }
 
-export type Ear<T,I> = (event:LEvent<T,I>)=>void
+export type Ear<T,I = undefined> = (event:LEvent<T,I>)=>void
 
-export abstract class DataStructure<T,I> implements Iterable<T> {
+export abstract class DataStructure<T,I = undefined> implements BigIterable<T> {
 
   private readonly ears = new Set<Ear<T,I>>()
 
@@ -50,6 +50,7 @@ export abstract class DataStructure<T,I> implements Iterable<T> {
 
   hear(ear:Ear<T,I>) {
     this.ears.add(ear)
+    if (this.empty) return
     ear({ cleared:false, added:{ elements:this, at:this.firstIndex, count:this.size }})
   }
 
@@ -77,7 +78,7 @@ export abstract class DataStructure<T,I> implements Iterable<T> {
   }
 
   map<R>(f:(x:T)=>R) {
-    return embiggen(this.map2(f))
+    return big(this.map2(f))
   }
 
   private *filter2(f:(x:T)=>boolean) {
@@ -85,7 +86,7 @@ export abstract class DataStructure<T,I> implements Iterable<T> {
   }
 
   filter(f:(x:T)=>boolean) {
-    return embiggen(this.filter2(f))
+    return big(this.filter2(f))
   }
 
   reduce<A>(a:A, f:(a:A, x:T)=>A) {
@@ -97,45 +98,10 @@ export abstract class DataStructure<T,I> implements Iterable<T> {
     return [...this]
   }
 
-  static wrap<T>(iterable:Iterable<T>):DataStructure<T,undefined> {
-    return new Wrap(iterable)
+  toString() {
+    return JSON.stringify(this)
   }
 
 }
 
-export abstract class Reversible<T,I> extends DataStructure<T,I> {
-
-  abstract get first():T|undefined
-  abstract get last():T|undefined
-  abstract get reversed():this
-
-}
-
-export interface Exclude {
-  start: boolean
-  end: boolean
-}
-
-export const IN_IN:Exclude = { start:false, end:false }
-export const IN_EX:Exclude = { start:false, end:true }
-export const EX_IN:Exclude = { start:true, end:false }
-export const EX_EX:Exclude = { start:true, end:true }
-
-
-export abstract class Ordered<K,T,I> extends Reversible<T,I> {
-  abstract slice(start:K, end:K, exclude?:Exclude):this
-}
-
-export abstract class ArrayLike<T> extends Ordered<number,T,number> {
-  abstract at(i:number):T
-}
-
-class Wrap<T> extends DataStructure<T,undefined> {
-
-  constructor(readonly iterable:Iterable<T>) { super() }
-
-  override get size() { return this.reduce(0, a => a + 1) }
-  override get firstIndex() { return undefined }
-  override [Symbol.iterator]() { return this.iterable[Symbol.iterator]() }
-
-}
+export const mutable = Symbol("mutable")
