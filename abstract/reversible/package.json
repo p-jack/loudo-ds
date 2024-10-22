@@ -1,7 +1,7 @@
 {
   "name": "loudo-ds-reversible",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Interface describing reversible data structures.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -32,6 +32,6 @@
     "vitest": "^1.2.2"
   },
   "dependencies": {
-    "loudo-ds-core": "^0.0.6"
+    "loudo-ds-core": "^0.0.8"
   }
 }
