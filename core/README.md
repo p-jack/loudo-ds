@@ -17,7 +17,7 @@ console.log(sum) // 9
 
 ## `DataStructure`
 
-The abstract `DataStructure` class is the basis for every data structure
+The abstract `RODataStructure` class is the basis for every data structure
 in the `loudo-ds` family. Data structures have two type parameters:
 `T` which indicates the type of element the data structure contains,
 and `I` which indicates the type of index for the data structure.
@@ -25,11 +25,14 @@ and `I` which indicates the type of index for the data structure.
 as hash tables or heaps.)
 
 At minimum, a data structure consists of an iterator and a size property.
-Specific subclasses of `DataStructure` provide additional properties
+Specific subclasses of `RODataStructure` provide additional properties
 and methods appropriate to the data structures they implement.
 
-Note that `DataStructure` extends `BigIterable`, so all data structures
+Note that `RODataStructure` extends `BigIterable`, so all data structures
 support the `map`, `filter`, and `reduce` operations.
+
+The `RO` stands for read-only. The abstract `DataStructure` class extends
+`RODataStructure`, adding support for mutations and events.
 
 ## LEvent
 

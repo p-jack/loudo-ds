@@ -42,31 +42,7 @@ export interface LEvent<T,I = undefined> {
 
 export type Ear<T,I = undefined> = (event:LEvent<T,I>)=>void
 
-export abstract class DataStructure<T,I = undefined> implements BigIterable<T> {
-
-  private readonly ears = new Set<Ear<T,I>>()
-
-  protected abstract get firstIndex():I
-
-  hear(ear:Ear<T,I>) {
-    this.ears.add(ear)
-    if (this.empty) return
-    ear({ cleared:false, added:{ elements:this, at:this.firstIndex, count:this.size }})
-  }
-
-  unhear(ear:Ear<T,I>) {
-    this.ears.delete(ear)
-  }
-
-  hearing(ear:Ear<T,I>) {
-    return this.ears.has(ear)
-  }
-
-  /* v8 ignore next 4 */
-  protected fire(event:LEvent<T,I>) {
-    for (const x of this.ears) { x(event) }
-    return event
-  }
+export abstract class RODataStructure<T,I = undefined> implements BigIterable<T> {
 
   abstract get size():number
   abstract [Symbol.iterator]():Iterator<T>
@@ -101,7 +77,37 @@ export abstract class DataStructure<T,I = undefined> implements BigIterable<T> {
   toString() {
     return JSON.stringify(this)
   }
-
+  
 }
 
 export const mutable = Symbol("mutable")
+
+export abstract class DataStructure<T,I = undefined> extends RODataStructure<T,I> {
+
+  get [mutable]() { return true }
+
+  private readonly ears = new Set<Ear<T,I>>()
+
+  protected abstract get firstIndex():I
+
+  hear(ear:Ear<T,I>) {
+    this.ears.add(ear)
+    if (this.empty) return
+    ear({ cleared:false, added:{ elements:this, at:this.firstIndex, count:this.size }})
+  }
+
+  unhear(ear:Ear<T,I>) {
+    this.ears.delete(ear)
+  }
+
+  hearing(ear:Ear<T,I>) {
+    return this.ears.has(ear)
+  }
+
+  /* v8 ignore next 4 */
+  protected fire(event:LEvent<T,I>) {
+    for (const x of this.ears) { x(event) }
+    return event
+  }
+
+}
