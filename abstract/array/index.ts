@@ -7,7 +7,7 @@ export interface ROArray<T> extends RODataStructure<T,number> {
   at(i:number):T
 }
 
-export interface Array<T> extends DataStructure<T>, ROArray<T> {
+export interface Array<T> extends DataStructure<T,number>, ROArray<T> {
   set(i:number,v:T):void
   add(v:T,i?:number):void
   addAll(v:Iterable<T>,i?:number):void
