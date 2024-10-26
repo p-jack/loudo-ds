@@ -1,7 +1,7 @@
 {
   "name": "loudo-ds-core",
   "type": "module",
-  "version": "0.0.8",
+  "version": "0.0.10",
   "description": "Core interfaces and classes for loudo data structures.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -20,7 +20,7 @@
     "url": "git+https://github.com/p-jack/loudo-ds.git"
   },
   "author": "Paul Jack",
-  "license": "ISC",
+  "license": "BSD-3-Clause",
   "bugs": {
     "url": "https://github.com/p-jack/loudo-ds/issues"
   },

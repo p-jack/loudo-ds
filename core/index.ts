@@ -1,33 +1,3 @@
-export interface BigIterable<T> extends Iterable<T> {
-  map<R>(f:(x:T)=>R):BigIterable<R>
-  filter(f:(x:T)=>boolean):BigIterable<T>
-  reduce<A>(a:A, f:(a:A, x:T)=>A):A
-}
-
-function* mapGen<T,R>(i:Iterable<T>, f:(x:T)=>R) {
-  for (const x of i) yield f(x)
-}
-
-function* filter<T,R>(i:Iterable<T>, f:(x:T)=>boolean) {
-  for (const x of i) if (f(x)) yield x
-}
-
-function reduce<T,A>(i:Iterable<T>, a:A, f:(a:A, x:T)=>A) {
-  for (const x of i) a = f(a, x)
-  return a
-}
-
-export function big<T>(i:Iterable<T>):BigIterable<T> {
-  const r:BigIterable<T> = {
-    [Symbol.iterator]:() => i[Symbol.iterator](),
-    map:<R>(f:(x:T)=>R) => big(mapGen(i, f)),
-    filter:(f:(x:T)=>boolean) => big(filter(i, f)),
-    reduce:<A>(a:A,f:(a:A,x:T)=>A) => reduce(i, a, f),
-  }
-  return r
-}
-
-
 export interface Mod<T,I> {
   elements: Iterable<T>
   at: I
@@ -42,27 +12,29 @@ export interface LEvent<T,I = undefined> {
 
 export type Ear<T,I = undefined> = (event:LEvent<T,I>)=>void
 
-export abstract class RODataStructure<T,I = undefined> implements BigIterable<T> {
+export abstract class RODataStructure<T,I = undefined> {
 
-  abstract get size():number
   abstract [Symbol.iterator]():Iterator<T>
 
+  get size() { return this.reduce(0, a => a + 1) }
   get empty() { return this.size === 0 }
+  get first() { for (const x of this) return x; return undefined }
+  has(v:T) { for (const x of this) if (x === v) return true; return false }
 
   private *map2<R>(f:(x:T)=>R) {
     for (const x of this) yield f(x)
   }
 
-  map<R>(f:(x:T)=>R) {
-    return big(this.map2(f))
+  map<R>(f:(x:T)=>R):RODataStructure<R> {
+    return new RO(this.map2(f))
   }
 
   private *filter2(f:(x:T)=>boolean) {
     for (const x of this) if (f(x)) yield x
   }
 
-  filter(f:(x:T)=>boolean) {
-    return big(this.filter2(f))
+  filter(f:(x:T)=>boolean):RODataStructure<T> {
+    return new RO(this.filter2(f))
   }
 
   reduce<A>(a:A, f:(a:A, x:T)=>A) {
@@ -80,15 +52,21 @@ export abstract class RODataStructure<T,I = undefined> implements BigIterable<T>
   
 }
 
-export const mutable = Symbol("mutable")
+class RO<T> extends RODataStructure<T> {
+  constructor(readonly iterable:Iterable<T>) { super() }
+  [Symbol.iterator]() { return this.iterable[Symbol.iterator]() }
+}
 
-export abstract class DataStructure<T,I = undefined> extends RODataStructure<T,I> {
+export function toDataStructure<T>(iterable:Iterable<T>):RODataStructure<T> {
+  return new RO(iterable)
+}
 
-  get [mutable]() { return true }
+
+export abstract class LoudDataStructure<T,I = undefined> extends RODataStructure<T,I> {
 
   private readonly ears = new Set<Ear<T,I>>()
 
-  protected abstract get firstIndex():I
+  protected get firstIndex():I { return undefined as never }
 
   hear(ear:Ear<T,I>) {
     this.ears.add(ear)
@@ -109,5 +87,11 @@ export abstract class DataStructure<T,I = undefined> extends RODataStructure<T,I
     for (const x of this.ears) { x(event) }
     return event
   }
+
+}
+
+export abstract class DataStructure<T,I = undefined> extends LoudDataStructure<T,I> {
+
+  get readOnly():RODataStructure<T,I> { return new RO(this) }
 
 }
