@@ -12,7 +12,7 @@ export interface LEvent<T,I = undefined> {
 
 export type Ear<T,I = undefined> = (event:LEvent<T,I>)=>void
 
-export abstract class RODataStructure<T,I = undefined> {
+export abstract class RoDataStructure<T,I = undefined> {
 
   abstract [Symbol.iterator]():Iterator<T>
 
@@ -25,7 +25,7 @@ export abstract class RODataStructure<T,I = undefined> {
     for (const x of this) yield f(x)
   }
 
-  map<R>(f:(x:T)=>R):RODataStructure<R> {
+  map<R>(f:(x:T)=>R):RoDataStructure<R> {
     return new RO(this.map2(f))
   }
 
@@ -33,7 +33,7 @@ export abstract class RODataStructure<T,I = undefined> {
     for (const x of this) if (f(x)) yield x
   }
 
-  filter(f:(x:T)=>boolean):RODataStructure<T> {
+  filter(f:(x:T)=>boolean):RoDataStructure<T> {
     return new RO(this.filter2(f))
   }
 
@@ -52,17 +52,17 @@ export abstract class RODataStructure<T,I = undefined> {
   
 }
 
-class RO<T> extends RODataStructure<T> {
+class RO<T> extends RoDataStructure<T> {
   constructor(readonly iterable:Iterable<T>) { super() }
   [Symbol.iterator]() { return this.iterable[Symbol.iterator]() }
 }
 
-export function toDataStructure<T>(iterable:Iterable<T>):RODataStructure<T> {
+export function toDataStructure<T>(iterable:Iterable<T>):RoDataStructure<T> {
   return new RO(iterable)
 }
 
 
-export abstract class LoudDataStructure<T,I = undefined> extends RODataStructure<T,I> {
+export abstract class LoudDataStructure<T,I = undefined> extends RoDataStructure<T,I> {
 
   private readonly ears = new Set<Ear<T,I>>()
 
@@ -92,6 +92,6 @@ export abstract class LoudDataStructure<T,I = undefined> extends RODataStructure
 
 export abstract class DataStructure<T,I = undefined> extends LoudDataStructure<T,I> {
 
-  get readOnly():RODataStructure<T,I> { return new RO(this) }
+  get readOnly():RoDataStructure<T,I> { return new RO(this) }
 
 }

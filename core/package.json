@@ -1,7 +1,7 @@
 {
   "name": "loudo-ds-core",
   "type": "module",
-  "version": "0.0.10",
+  "version": "0.0.12",
   "description": "Core interfaces and classes for loudo data structures.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
