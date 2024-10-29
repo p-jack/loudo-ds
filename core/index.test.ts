@@ -1,9 +1,9 @@
 import { test, expect, describe } from "vitest"
-import { DataStructure, LEvent, toDataStructure } from "./index"
+import { Base, DataStructure, LEvent, Loud, mixed, mixin, toDataStructure } from "./index"
 
 const to = toDataStructure
 
-describe("RoDataStructure", () => {
+describe("Base", () => {
   test("empty", () => {
     const ds0 = to([])
     expect(ds0.empty).toStrictEqual(true)
@@ -28,6 +28,11 @@ describe("RoDataStructure", () => {
     expect(to([11]).first).toBe(11)
     expect(to([111, 222, 333]).first).toBe(111)
   })
+  test("last", () => {
+    expect(to([]).last).toBeUndefined()
+    expect(to([11]).last).toBe(11)
+    expect(to([111, 222, 333]).last).toBe(333)
+  })
   test("map", () => {
     const ds = to([1, 2, 3])
     expect([...ds.map(x => x * 2)]).toStrictEqual([2, 4, 6])
@@ -51,12 +56,14 @@ describe("RoDataStructure", () => {
   })
 })
 
-class Arr extends DataStructure<number> {
-  constructor(private readonly a:number[] = []) { super() }
+class Arr extends Base<number> {
+  constructor(private readonly a:number[] = []) { super({}) }
   [Symbol.iterator]() { return this.a[Symbol.iterator]() }
 }
+interface Arr extends Loud<number> {}
+mixin(Arr, [Loud])
 
-describe("DataStructure", () => {
+describe("Loud", () => {
   describe("hear", () => {
     test("no existing elements", () => {
       const ds = new Arr([])
@@ -89,12 +96,35 @@ describe("DataStructure", () => {
       expect(ds.hearing(ear)).toStrictEqual(false)
     })
   })
-  test("readOnly", () => {
-    const a = [11, 22, 33]
-    const ds = new Arr(a)
-    const ro = ds.readOnly
-    expect([...ro]).toStrictEqual([11, 22, 33])
-    a.push(44)
-    expect([...ro]).toStrictEqual([11, 22, 33, 44])
-  })
+})
+
+test("mixin", () => {
+  const field = Symbol("field")
+  const method = Symbol("method")
+  class Z {}
+  interface AI {
+    readonly field:string
+    method():string
+    [method]():string
+    readonly [field]:string
+    readonly p2:string|undefined
+  }
+  abstract class A extends Z implements AI {
+    get field() { return "abc" }
+    method() { return "xyz" }
+    get [field]() { return "abc" }
+    [method]() { return "xyz" }
+    private p:string|undefined
+    get p2() { if (this.p === undefined) this.p = "123"; return this.p }
+  }
+  interface Z extends AI {}
+  expect(mixed(Z, A)).toBe(false)
+  mixin(Z, [A])
+  expect(mixed(Z, A)).toBe(true)
+  const z = new Z()
+  expect(z.field).toBe("abc")
+  expect(z.method()).toBe("xyz")
+  expect(z[field]).toBe("abc")
+  expect(z[method]()).toBe("xyz")
+  expect(z.p2).toBe("123")
 })

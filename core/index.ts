@@ -12,20 +12,53 @@ export interface LEvent<T,I = undefined> {
 
 export type Ear<T,I = undefined> = (event:LEvent<T,I>)=>void
 
-export abstract class RoDataStructure<T,I = undefined> {
+export interface Config<T> {
+  readonly compare?:(a:T,b:T)=>boolean
+  [key: string]: any
+}
+
+export interface DataStructure<T> {
+  [Symbol.iterator]():Iterator<T>
+  get size():number
+  get empty():boolean
+  get first():T|undefined
+  get last():T|undefined
+  get compare():(a:T,b:T)=>boolean
+  has(v:T):boolean
+  map<R>(f:(v:T)=>R):DataStructure<R>
+  filter(f:(v:T)=>boolean):DataStructure<T>
+  reduce<A>(a:A, f:(a:A,v:T)=>A):A
+  toJSON():T[]
+  toString():string
+}
+
+export abstract class Base<T> implements DataStructure<T> {
+
+  constructor(protected readonly config:Config<T>) {}
 
   abstract [Symbol.iterator]():Iterator<T>
 
   get size() { return this.reduce(0, a => a + 1) }
   get empty() { return this.size === 0 }
+  get compare() { return this.config.compare ?? Object.is }
   get first() { for (const x of this) return x; return undefined }
-  has(v:T) { for (const x of this) if (x === v) return true; return false }
+  get last() { 
+    let r:T|undefined = undefined;
+    for (const x of this) r = x
+    return r
+  }
+
+  has(v:T) {
+    const c = this.compare
+    for (const x of this) if (c(x, v)) return true
+    return false
+  }
 
   private *map2<R>(f:(x:T)=>R) {
     for (const x of this) yield f(x)
   }
 
-  map<R>(f:(x:T)=>R):RoDataStructure<R> {
+  map<R>(f:(x:T)=>R):DataStructure<R> {
     return new RO(this.map2(f))
   }
 
@@ -33,7 +66,7 @@ export abstract class RoDataStructure<T,I = undefined> {
     for (const x of this) if (f(x)) yield x
   }
 
-  filter(f:(x:T)=>boolean):RoDataStructure<T> {
+  filter(f:(x:T)=>boolean):DataStructure<T> {
     return new RO(this.filter2(f))
   }
 
@@ -52,21 +85,46 @@ export abstract class RoDataStructure<T,I = undefined> {
   
 }
 
-class RO<T> extends RoDataStructure<T> {
-  constructor(readonly iterable:Iterable<T>) { super() }
+class RO<T> extends Base<T> {
+  constructor(readonly iterable:Iterable<T>) { super({}) }
   [Symbol.iterator]() { return this.iterable[Symbol.iterator]() }
 }
 
-export function toDataStructure<T>(iterable:Iterable<T>):RoDataStructure<T> {
+export function toDataStructure<T>(iterable:Iterable<T>):DataStructure<T> {
   return new RO(iterable)
 }
 
+export abstract class Mixin<T> implements DataStructure<T> {
+  abstract [Symbol.iterator]():Iterator<T>
+  abstract get size():number
+  abstract get empty():boolean
+  abstract get first():T|undefined
+  abstract get last():T|undefined
+  abstract get compare():(a:T,b:T)=>boolean
+  abstract has(v:T):boolean
+  abstract map<R>(f:(v:T)=>R):DataStructure<R>
+  abstract filter(f:(v:T)=>boolean):DataStructure<T>
+  abstract reduce<A>(a:A, f:(a:A,v:T)=>A):A
+  abstract toJSON():T[]
+  abstract toString():string
+}
 
-export abstract class LoudDataStructure<T,I = undefined> extends RoDataStructure<T,I> {
 
-  private readonly ears = new Set<Ear<T,I>>()
+export interface LoudI<T,I> extends DataStructure<T> {
+  hear(ear:Ear<T,I>):void
+  unhear(ear:Ear<T,I>):void
+  hearing(ear:Ear<T,I>):void
+}
 
-  protected get firstIndex():I { return undefined as never }
+export abstract class Loud<T,I> extends Mixin<T> implements LoudI<T,I> {
+
+  private ears_:Set<Ear<T,I>>|undefined
+  private get ears() {
+    if (this.ears_ === undefined) { this.ears_ = new Set() }
+    return this.ears_
+  }
+
+  protected abstract get firstIndex():I
 
   hear(ear:Ear<T,I>) {
     this.ears.add(ear)
@@ -90,8 +148,37 @@ export abstract class LoudDataStructure<T,I = undefined> extends RoDataStructure
 
 }
 
-export abstract class DataStructure<T,I = undefined> extends LoudDataStructure<T,I> {
+export abstract class LoudMixin<T,I> extends Mixin<T> implements LoudI<T,I> {
+  protected abstract get firstIndex():I
+  protected abstract fire(event:LEvent<T,I>):LEvent<T,I>
+  abstract hear(ear:Ear<T,I>):void
+  abstract unhear(ear:Ear<T,I>):void
+  abstract hearing(ear:Ear<T,I>):boolean
+}
 
-  get readOnly():RoDataStructure<T,I> { return new RO(this) }
 
+const sym = Symbol("mixins")
+
+type Class = abstract new(...args:any[])=>any
+
+export function mixin(c:Class, m:Class[]) {
+  let set = (c as any)[sym] as Set<Class>
+  if (set === undefined) {
+    set = new Set();
+    (c as any)[sym] = set
+  }
+  const p1 = c.prototype
+  for (const x of m.filter(x => !set.has(x))) {
+    const p2 = x.prototype
+    const d = Object.getOwnPropertyDescriptors(p2);
+    delete (d as any)["constructor"]
+    delete (d as any)["prototype"]
+    Object.defineProperties(p1, d)
+    set.add(x)
+  }
+}
+
+export function mixed(target:Class, mixin:Class) {
+  const set = (target as any)[sym] as Set<Class>
+  return set ? set.has(mixin) : false
 }
