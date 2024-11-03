@@ -24,6 +24,7 @@ export interface DataStructure<T> {
   get first():T|undefined
   get last():T|undefined
   get compare():(a:T,b:T)=>boolean
+  forEach(f:(v:T)=>void):void
   has(v:T):boolean
   map<R>(f:(v:T)=>R):DataStructure<R>
   filter(f:(v:T)=>boolean):DataStructure<T>
@@ -46,6 +47,10 @@ export abstract class Base<T> implements DataStructure<T> {
     let r:T|undefined = undefined;
     for (const x of this) r = x
     return r
+  }
+
+  forEach(f:(v:T)=>void) {
+    for (const x of this) f(x)
   }
 
   has(v:T) {
@@ -101,6 +106,7 @@ export abstract class Mixin<T> implements DataStructure<T> {
   abstract get first():T|undefined
   abstract get last():T|undefined
   abstract get compare():(a:T,b:T)=>boolean
+  abstract forEach(f:(v:T)=>void):void
   abstract has(v:T):boolean
   abstract map<R>(f:(v:T)=>R):DataStructure<R>
   abstract filter(f:(v:T)=>boolean):DataStructure<T>
@@ -109,14 +115,23 @@ export abstract class Mixin<T> implements DataStructure<T> {
   abstract toString():string
 }
 
+interface Held {
+  ds:Loud<any,any>
+  ear:Ear<any,any>
+}
 
-export interface LoudI<T,I> extends DataStructure<T> {
+/* v8 ignore next 3 */
+const registry = new FinalizationRegistry((held:Held) => {
+  held.ds.unhear(held.ear)
+})
+
+export interface Loud<T,I> extends DataStructure<T> {
   hear(ear:Ear<T,I>):void
   unhear(ear:Ear<T,I>):void
   hearing(ear:Ear<T,I>):void
 }
 
-export abstract class Loud<T,I> extends Mixin<T> implements LoudI<T,I> {
+export abstract class BaseLoud<T,I> extends Mixin<T> implements Loud<T,I> {
 
   private ears_:Set<Ear<T,I>>|undefined
   private get ears() {
@@ -146,9 +161,20 @@ export abstract class Loud<T,I> extends Mixin<T> implements LoudI<T,I> {
     return event
   }
 
+  /* v8 ignore next 9 */
+  protected tether(ds:Loud<T,I>, ear:(me:typeof this, event:LEvent<T,I>)=>void) {
+    const w = new WeakRef(this)
+    const ear2 = (event:LEvent<T,I>) => {
+      const s = w.deref()
+      if (s !== undefined) ear(s, event)
+    }
+    ds.hear(ear2)
+    registry.register(this, { ds, ear:ear2 })
+  }
+
 }
 
-export abstract class LoudMixin<T,I> extends Mixin<T> implements LoudI<T,I> {
+export abstract class LoudMixin<T,I> extends Mixin<T> implements Loud<T,I> {
   protected abstract get firstIndex():I
   protected abstract fire(event:LEvent<T,I>):LEvent<T,I>
   abstract hear(ear:Ear<T,I>):void
@@ -168,17 +194,20 @@ export function mixin(c:Class, m:Class[]) {
     (c as any)[sym] = set
   }
   const p1 = c.prototype
+  const d1 = Object.getOwnPropertyDescriptors(p1)
   for (const x of m.filter(x => !set.has(x))) {
     const p2 = x.prototype
-    const d = Object.getOwnPropertyDescriptors(p2);
-    delete (d as any)["constructor"]
-    delete (d as any)["prototype"]
-    Object.defineProperties(p1, d)
+    const d2 = Object.getOwnPropertyDescriptors(p2);
+    for (const k in d1) delete(d2 as any)[k]
+    Object.defineProperties(p1, d2)
     set.add(x)
   }
 }
 
-export function mixed(target:Class, mixin:Class) {
+export function mixed(target:Class|object, mixin:Class) {
+  if (typeof target === "object") {
+    target = target.constructor
+  }
   const set = (target as any)[sym] as Set<Class>
   return set ? set.has(mixin) : false
 }

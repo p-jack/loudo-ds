@@ -1,5 +1,5 @@
 import { test, expect, describe } from "vitest"
-import { Base, DataStructure, LEvent, Loud, mixed, mixin, toDataStructure } from "./index"
+import { Base, BaseLoud, DataStructure, LEvent, mixed, mixin, toDataStructure } from "./index"
 
 const to = toDataStructure
 
@@ -12,12 +12,11 @@ describe("Base", () => {
     const ds3 = to([11, 22, 33])
     expect(ds3.empty).toStrictEqual(false)
   })
-  test("has", () => {
-    const ds = to([11, 22, 33])
-    expect(ds.has(11)).toStrictEqual(true)
-    expect(ds.has(22)).toStrictEqual(true)
-    expect(ds.has(33)).toStrictEqual(true)
-    expect(ds.has(44)).toStrictEqual(false)
+  test("forEach", () => {
+    const ds = to([1, 2, 3, 4, 5])
+    let sum = 0
+    ds.forEach(x => sum += x)
+    expect(sum).toBe(15)
   })
   test("filter", () => {
     const ds = to([1, 2, 3, 4, 5, 6])
@@ -27,6 +26,13 @@ describe("Base", () => {
     expect(to([]).first).toBeUndefined()
     expect(to([11]).first).toBe(11)
     expect(to([111, 222, 333]).first).toBe(111)
+  })
+  test("has", () => {
+    const ds = to([11, 22, 33])
+    expect(ds.has(11)).toStrictEqual(true)
+    expect(ds.has(22)).toStrictEqual(true)
+    expect(ds.has(33)).toStrictEqual(true)
+    expect(ds.has(44)).toStrictEqual(false)
   })
   test("last", () => {
     expect(to([]).last).toBeUndefined()
@@ -60,10 +66,10 @@ class Arr extends Base<number> {
   constructor(private readonly a:number[] = []) { super({}) }
   [Symbol.iterator]() { return this.a[Symbol.iterator]() }
 }
-interface Arr extends Loud<number> {}
-mixin(Arr, [Loud])
+interface Arr extends BaseLoud<number,undefined> {}
+mixin(Arr, [BaseLoud])
 
-describe("Loud", () => {
+describe("BaseLoud", () => {
   describe("hear", () => {
     test("no existing elements", () => {
       const ds = new Arr([])
@@ -101,13 +107,16 @@ describe("Loud", () => {
 test("mixin", () => {
   const field = Symbol("field")
   const method = Symbol("method")
-  class Z {}
+  class Z {
+    over() { return "Z" }
+  }
   interface AI {
     readonly field:string
     method():string
     [method]():string
     readonly [field]:string
     readonly p2:string|undefined
+    over():string
   }
   abstract class A extends Z implements AI {
     get field() { return "abc" }
@@ -116,15 +125,18 @@ test("mixin", () => {
     [method]() { return "xyz" }
     private p:string|undefined
     get p2() { if (this.p === undefined) this.p = "123"; return this.p }
+    over() { return "A" }
   }
   interface Z extends AI {}
   expect(mixed(Z, A)).toBe(false)
   mixin(Z, [A])
   expect(mixed(Z, A)).toBe(true)
   const z = new Z()
+  expect(mixed(z, A)).toBe(true)
   expect(z.field).toBe("abc")
   expect(z.method()).toBe("xyz")
   expect(z[field]).toBe("abc")
   expect(z[method]()).toBe("xyz")
   expect(z.p2).toBe("123")
+  expect(z.over()).toBe("Z")
 })
