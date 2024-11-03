@@ -1,9 +1,9 @@
 import { test, expect, describe, beforeEach } from "vitest"
-import { Base, LEvent, Loud } from "loudo-ds-core"
-import { BaseLa, BaseRemLa, BaseRoLa } from "./index"
+import { LEvent } from "loudo-ds-core"
+import { BaseA, BaseRoA } from "./index"
 
 
-class R extends BaseRoLa<number> {
+class R extends BaseRoA<number> {
   constructor(public readonly count:number) { super({}) }
   get size() { return this.count }
   override at(i:number) {
@@ -36,7 +36,7 @@ function capture<T>():Capture<T> {
   }
 }
 
-describe("RoLa", () => {
+describe("RoA", () => {
   let a = new R(4)
   let c = capture<number>()
   beforeEach(() => {
@@ -51,8 +51,8 @@ describe("RoLa", () => {
   test("bounds", () => {
     expect(() => { a.at(-1) }).toThrow("negative array index: -1")
     expect(() => { a.at(0.5) }).toThrow("invalid array index: 0.5")
-    expect(() => { a.at(4) }).toThrow("4 is an invalid index for array of size 4")
-    expect(() => { a.bounds(5, true) }).toThrow("5 is invalid insertion index for array of size 4")
+    expect(() => { a.at(4) }).toThrow("index 4 >= size 4")
+    expect(() => { a.bounds(5, true) }).toThrow("index 5 > size 4")
   })
   test("findIndex", () => {
     expect(a.findIndex(x => x === 33)).toBe(2)
@@ -67,24 +67,10 @@ describe("RoLa", () => {
     expect(a.last).toBe(44)
     expect(new R(0).last).toBeUndefined()
   })
-  test("binarySearch", () => {
-    expect(a.binarySearch(11, cmp)).toStrictEqual({ found:true, index: 0})
-    expect(a.binarySearch(22, cmp)).toStrictEqual({ found:true, index: 1})
-    expect(a.binarySearch(33, cmp)).toStrictEqual({ found:true, index: 2})
-    expect(a.binarySearch(44, cmp)).toStrictEqual({ found:true, index: 3})
-    expect(a.binarySearch(-1000, cmp)).toStrictEqual({ found:false, index: 0 })
-    expect(a.binarySearch(1000, cmp)).toStrictEqual({ found:false, index: 4 })
-  })
-  test("lowerBound", () => {
-    expect(a.lowerBound(30, cmp)).toBe(2)
-  })
-  test("upperBound", () => {
-    expect(a.upperBound(30, cmp)).toBe(2)
-  })
 })
 
 
-class M extends BaseLa<string> {
+class M extends BaseA<string> {
 
   constructor(readonly a:string[]) { super({}) }
 
@@ -121,44 +107,70 @@ class M extends BaseLa<string> {
 
 }
 
-interface M extends Loud<string,number> {}
-
-
-describe("BaseLa", () => {
+describe("BaseA", () => {
   describe("drop", () => {
-    test("start", () => {
-      const a = new M(["z1", "z2", "z3", "A", "B"])
-      a.drop(x => x.startsWith("z"))
-      expect([...a]).toStrictEqual(["A", "B"])
+    describe("by value", () => {
+      test("start", () => {
+        const a = new M(["z1", "z2", "z3", "A", "B"])
+        expect(a.drop(x => x.startsWith("z"))).toBe(3)
+        expect([...a]).toStrictEqual(["A", "B"])
+      })
+      test("end", () => {
+        const a = new M(["A", "B", "z1", "z2", "z3"])
+        expect(a.drop(x => x.startsWith("z"))).toBe(3)
+        expect([...a]).toStrictEqual(["A", "B"])
+      })
+      test("middle", () => {
+        const a = new M(["A", "z1", "z2", "z3", "B"])
+        expect(a.drop(x => x.startsWith("z"))).toBe(3)
+        expect([...a]).toStrictEqual(["A", "B"])
+      })
+      test("all", () => {
+        const a = new M(["z1", "A", "z2", "B", "z3"])
+        expect(a.drop(x => x.startsWith("z"))).toBe(3)
+        expect([...a]).toStrictEqual(["A", "B"])
+      })
+      test("clear", () => {
+        const a = new M(["z1", "A", "z2", "B", "z3"])
+        expect(a.drop(() => true)).toBe(5)
+        expect([...a]).toStrictEqual([])
+      })
     })
-    test("end", () => {
-      const a = new M(["A", "B", "z1", "z2", "z3"])
-      a.drop(x => x.startsWith("z"))
-      expect([...a]).toStrictEqual(["A", "B"])
-    })
-    test("middle", () => {
-      const a = new M(["A", "z1", "z2", "z3", "B"])
-      a.drop(x => x.startsWith("z"))
-      expect([...a]).toStrictEqual(["A", "B"])
-    })
-    test("all", () => {
-      const a = new M(["z1", "A", "z2", "B", "z3"])
-      a.drop(x => x.startsWith("z"))
-      expect([...a]).toStrictEqual(["A", "B"])
-    })
-    test("clear", () => {
-      const a = new M(["z1", "A", "z2", "B", "z3"])
-      a.drop(() => true)
-      expect([...a]).toStrictEqual([])
+    describe("by index", () => {
+      test("start", () => {
+        const a = new M(["z1", "z2", "z3", "A", "B"])
+        expect(a.drop((_,i) => i < 3)).toBe(3)
+        expect([...a]).toStrictEqual(["A", "B"])
+      })
+      test("end", () => {
+        const a = new M(["A", "B", "z1", "z2", "z3"])
+        expect(a.drop((_,i) => i >= 2)).toBe(3)
+        expect([...a]).toStrictEqual(["A", "B"])
+      })
+      test("middle", () => {
+        const a = new M(["A", "z1", "z2", "z3", "B"])
+        expect(a.drop((_,i) => i >= 1 && i <= 3)).toBe(3)
+        expect([...a]).toStrictEqual(["A", "B"])
+      })
+      test("all", () => {
+        const a = new M(["z1", "A", "z2", "B", "z3"])
+        expect(a.drop((_,i) => i === 0 || i === 2 || i === 4)).toBe(3)
+        expect([...a]).toStrictEqual(["A", "B"])
+      })
+      test("clear", () => {
+        const a = new M(["z1", "A", "z2", "B", "z3"])
+        expect(a.drop(() => true)).toBe(5)
+        expect([...a]).toStrictEqual([])
+      })
     })
   })
   test("firstIndex", () => {
     expect(new M([]).firstIndex).toBe(0)
   })
-  test("sort", () => {
-    const a = new M(["C", "A", "B", "E", "D"])
-    a.sort((a,b) => a.localeCompare(b))
-    expect([...a]).toStrictEqual(["A", "B", "C", "D", "E"])
+  test("reverse", () => {
+    const m = new M(["A", "B", "C", "D"])
+    m.reverse()
+    expect([...m]).toStrictEqual(["D", "C", "B", "A"])
   })
 })
 

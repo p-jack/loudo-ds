@@ -1,7 +1,7 @@
 {
   "name": "loudo-ds-array-interfaces",
   "type": "module",
-  "version": "0.0.8",
+  "version": "0.0.10",
   "description": "Core interfaces loud arrays.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -33,6 +33,6 @@
     "vitest": "^2.1.4"
   },
   "dependencies": {
-    "loudo-ds-core": "^0.0.16"
+    "loudo-ds-core": "^0.0.18"
   }
 }
