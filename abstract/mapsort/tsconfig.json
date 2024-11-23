@@ -1,0 +1,19 @@
+{
+  "include":["index.ts"],
+  "compilerOptions": {
+    "esModuleInterop":true,
+    "outDir": "./dist/",
+    "module": "es6",
+    "target": "es6",
+    "declaration": true,
+    "lib": ["ESNext"],
+    "strict": true,
+    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": true,
+    "moduleDetection": "force",
+    "moduleResolution": "Node10",
+    "isolatedModules": true,
+    "sourceMap": true,
+    "noImplicitOverride": true,
+  },
+}
