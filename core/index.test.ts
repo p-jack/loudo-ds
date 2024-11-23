@@ -1,9 +1,9 @@
 import { test, expect, describe } from "vitest"
-import { Base, BaseLoud, DataStructure, LEvent, mixed, mixin, toDataStructure } from "./index"
+import { Tin, Loud, LEvent, mixed, mixin, overwrite, toTin } from "./index"
 
-const to = toDataStructure
+const to = toTin
 
-describe("Base", () => {
+describe("Tin", () => {
   test("empty", () => {
     const ds0 = to([])
     expect(ds0.empty).toStrictEqual(true)
@@ -11,6 +11,10 @@ describe("Base", () => {
     expect(ds1.empty).toStrictEqual(false)
     const ds3 = to([11, 22, 33])
     expect(ds3.empty).toStrictEqual(false)
+  })
+  test("eq", () => {
+    const ds0 = to([])
+    expect(ds0.eq === Object.is).toBe(true)
   })
   test("forEach", () => {
     const ds = to([1, 2, 3, 4, 5])
@@ -43,6 +47,17 @@ describe("Base", () => {
     const ds = to([1, 2, 3])
     expect([...ds.map(x => x * 2)]).toStrictEqual([2, 4, 6])
   })
+  describe("only", () => {
+    test("zero", () => {
+      expect(() => { to([]).only }).toThrowError()
+    })
+    test("one", () => {
+      expect(to([1111]).only).toBe(1111)
+    })
+    test("many", () => {
+      expect(() => { to([1111, 2222, 3333]).only }).toThrowError()
+    })
+  })
   test("reduce", () => {
     const ds = to([1, 2, 3])
     expect(ds.reduce(0, (a,x) => a + x)).toStrictEqual(6)
@@ -62,14 +77,15 @@ describe("Base", () => {
   })
 })
 
-class Arr extends Base<number> {
-  constructor(private readonly a:number[] = []) { super({}) }
+class Arr {
+  constructor(private readonly a:number[] = []) { }
+  protected get config() { return {} }
   [Symbol.iterator]() { return this.a[Symbol.iterator]() }
 }
-interface Arr extends BaseLoud<number,undefined> {}
-mixin(Arr, [BaseLoud])
+interface Arr extends Loud<number,undefined> {}
+mixin(Arr, [Loud])
 
-describe("BaseLoud", () => {
+describe("Loud", () => {
   describe("hear", () => {
     test("no existing elements", () => {
       const ds = new Arr([])
@@ -106,7 +122,7 @@ describe("BaseLoud", () => {
 
 test("mixin", () => {
   const field = Symbol("field")
-  const method = Symbol("method")
+  const method = Symbol("method")  
   class Z {
     over() { return "Z" }
   }
@@ -118,7 +134,7 @@ test("mixin", () => {
     readonly p2:string|undefined
     over():string
   }
-  abstract class A extends Z implements AI {
+  abstract class A {
     get field() { return "abc" }
     method() { return "xyz" }
     get [field]() { return "abc" }
@@ -127,7 +143,7 @@ test("mixin", () => {
     get p2() { if (this.p === undefined) this.p = "123"; return this.p }
     over() { return "A" }
   }
-  interface Z extends AI {}
+  interface Z extends A {}
   expect(mixed(Z, A)).toBe(false)
   mixin(Z, [A])
   expect(mixed(Z, A)).toBe(true)
@@ -139,4 +155,45 @@ test("mixin", () => {
   expect(z[method]()).toBe("xyz")
   expect(z.p2).toBe("123")
   expect(z.over()).toBe("Z")
+  abstract class B {
+    b() { return "b" }
+  }
+  mixin(A, [B])
+  interface A extends B {}
+  expect(z.b()).toBe("b")
+  expect(mixed(z, B)).toBe(true)
+  expect(mixed(Z, B)).toBe(true)
+})
+
+test("overwrite", () => {
+  class A {
+    count = 0
+    baz(n:number, b:string):string {
+      return b + ":" + (n + this.count)
+    }
+    notOverwritten = "notOverwritten"
+    notOverwritten2() { return "notOverwritten2" }
+  }
+  abstract class B {
+    count = 5
+    baz(original:(n:number,b:string)=>string, n:number, b:string) {
+      return original.call(this, n + 1, b)
+    }
+    notOverwritten() {}
+  }
+  const o = new A()
+  o.count = 5
+  expect(o.baz(1, "A")).toBe("A:6")
+  overwrite(A, B)
+  expect(o.baz(1, "A")).toBe("A:7")
+  expect(o.notOverwritten).toBe("notOverwritten")
+  abstract class C {
+    get notOverwritten2() { return "overwritten" }
+    baz(original:(n:number,b:string)=>string, n:number, b:string) {
+      return original.call(this, n, b) + "-C"
+    }
+  }
+  overwrite(A, C)
+  expect(o.baz(1, "A")).toBe("A:7-C")
+  expect(o.notOverwritten2()).toBe("notOverwritten2")
 })

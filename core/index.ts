@@ -1,51 +1,54 @@
-export interface Mod<T,I> {
-  elements: Iterable<T>
+const kids = Symbol("kids")
+const all = Symbol("mixins")
+
+export interface Mod<T extends {},I = undefined> {
+  elements: Tin<T>
   at: I
   count: number
 }
 
-export interface LEvent<T,I = undefined> {
+export interface LEvent<T extends {},I = undefined> {
   readonly cleared:boolean
   readonly added?:Mod<T,I>
   readonly removed?:Mod<T,I>
 }
 
-export type Ear<T,I = undefined> = (event:LEvent<T,I>)=>void
+export type Ear<T extends {},I = undefined> = (event:LEvent<T,I>)=>void
 
-export interface Config<T> {
-  readonly compare?:(a:T,b:T)=>boolean
-  [key: string]: any
+export interface Config<T extends {}> {
+  readonly eq?:(a:T,b:T)=>boolean
 }
 
-export interface DataStructure<T> {
-  [Symbol.iterator]():Iterator<T>
-  get size():number
-  get empty():boolean
-  get first():T|undefined
-  get last():T|undefined
-  get compare():(a:T,b:T)=>boolean
-  forEach(f:(v:T)=>void):void
-  has(v:T):boolean
-  map<R>(f:(v:T)=>R):DataStructure<R>
-  filter(f:(v:T)=>boolean):DataStructure<T>
-  reduce<A>(a:A, f:(a:A,v:T)=>A):A
-  toJSON():T[]
-  toString():string
-}
+export class OnlyError extends Error {}
 
-export abstract class Base<T> implements DataStructure<T> {
+export abstract class Tin<T extends {}> {
 
-  constructor(protected readonly config:Config<T>) {}
+  protected abstract get config():Config<T>
 
   abstract [Symbol.iterator]():Iterator<T>
 
   get size() { return this.reduce(0, a => a + 1) }
   get empty() { return this.size === 0 }
-  get compare() { return this.config.compare ?? Object.is }
-  get first() { for (const x of this) return x; return undefined }
+  get eq() { return this.config?.eq ?? Object.is }
+
+  get first() {
+    for (const x of this) return x;
+    return undefined
+  }
+
   get last() { 
-    let r:T|undefined = undefined;
+    let r:T|undefined = undefined
     for (const x of this) r = x
+    return r
+  }
+
+  get only():T {
+    let r:T|undefined = undefined
+    for (const x of this) {
+      if (r !== undefined) throw new OnlyError()
+      r = x
+    }
+    if (r === undefined) throw new OnlyError()
     return r
   }
 
@@ -54,7 +57,7 @@ export abstract class Base<T> implements DataStructure<T> {
   }
 
   has(v:T) {
-    const c = this.compare
+    const c = this.eq
     for (const x of this) if (c(x, v)) return true
     return false
   }
@@ -63,16 +66,16 @@ export abstract class Base<T> implements DataStructure<T> {
     for (const x of this) yield f(x)
   }
 
-  map<R>(f:(x:T)=>R):DataStructure<R> {
-    return new RO(this.map2(f))
+  map<R extends {}>(f:(x:T)=>R, config?:Config<R>):Tin<R> {
+    return new RO(config ?? {}, this.map2(f))
   }
 
   private *filter2(f:(x:T)=>boolean) {
     for (const x of this) if (f(x)) yield x
   }
 
-  filter(f:(x:T)=>boolean):DataStructure<T> {
-    return new RO(this.filter2(f))
+  filter(f:(x:T)=>boolean):Tin<T> {
+    return new RO(this.config, this.filter2(f))
   }
 
   reduce<A>(a:A, f:(a:A, x:T)=>A) {
@@ -90,29 +93,15 @@ export abstract class Base<T> implements DataStructure<T> {
   
 }
 
-class RO<T> extends Base<T> {
-  constructor(readonly iterable:Iterable<T>) { super({}) }
+class RO<T extends {}> {
+  constructor(protected readonly config:Config<T>, readonly iterable:Iterable<T>) {}
   [Symbol.iterator]() { return this.iterable[Symbol.iterator]() }
 }
+interface RO<T extends {}> extends Tin<T> {}
+mixin(RO, [Tin])
 
-export function toDataStructure<T>(iterable:Iterable<T>):DataStructure<T> {
-  return new RO(iterable)
-}
-
-export abstract class Mixin<T> implements DataStructure<T> {
-  abstract [Symbol.iterator]():Iterator<T>
-  abstract get size():number
-  abstract get empty():boolean
-  abstract get first():T|undefined
-  abstract get last():T|undefined
-  abstract get compare():(a:T,b:T)=>boolean
-  abstract forEach(f:(v:T)=>void):void
-  abstract has(v:T):boolean
-  abstract map<R>(f:(v:T)=>R):DataStructure<R>
-  abstract filter(f:(v:T)=>boolean):DataStructure<T>
-  abstract reduce<A>(a:A, f:(a:A,v:T)=>A):A
-  abstract toJSON():T[]
-  abstract toString():string
+export function toTin<T extends {}>(iterable:Iterable<T>, config:Config<T> = {}):Tin<T> {
+  return new RO(config, iterable)
 }
 
 interface Held {
@@ -125,13 +114,7 @@ const registry = new FinalizationRegistry((held:Held) => {
   held.ds.unhear(held.ear)
 })
 
-export interface Loud<T,I> extends DataStructure<T> {
-  hear(ear:Ear<T,I>):void
-  unhear(ear:Ear<T,I>):void
-  hearing(ear:Ear<T,I>):void
-}
-
-export abstract class BaseLoud<T,I> extends Mixin<T> implements Loud<T,I> {
+export abstract class Loud<T extends {},I = undefined> {
 
   private ears_:Set<Ear<T,I>>|undefined
   private get ears() {
@@ -162,9 +145,9 @@ export abstract class BaseLoud<T,I> extends Mixin<T> implements Loud<T,I> {
   }
 
   /* v8 ignore next 9 */
-  protected tether(ds:Loud<T,I>, ear:(me:typeof this, event:LEvent<T,I>)=>void) {
+  protected tether<T2 extends {},I2>(ds:Loud<T2,I2>, ear:(me:typeof this, event:LEvent<T2,I2>)=>void) {
     const w = new WeakRef(this)
-    const ear2 = (event:LEvent<T,I>) => {
+    const ear2 = (event:LEvent<T2,I2>) => {
       const s = w.deref()
       if (s !== undefined) ear(s, event)
     }
@@ -173,34 +156,36 @@ export abstract class BaseLoud<T,I> extends Mixin<T> implements Loud<T,I> {
   }
 
 }
-
-export abstract class LoudMixin<T,I> extends Mixin<T> implements Loud<T,I> {
-  protected abstract get firstIndex():I
-  protected abstract fire(event:LEvent<T,I>):LEvent<T,I>
-  abstract hear(ear:Ear<T,I>):void
-  abstract unhear(ear:Ear<T,I>):void
-  abstract hearing(ear:Ear<T,I>):boolean
-}
+export interface Loud<T,I> extends Tin<T> {}
+mixin(Loud, [Tin])
 
 
-const sym = Symbol("mixins")
+export type Class = abstract new(...args:any[])=>any
 
-type Class = abstract new(...args:any[])=>any
-
-export function mixin(c:Class, m:Class[]) {
+function setFor(c:Class, sym:symbol) {
   let set = (c as any)[sym] as Set<Class>
   if (set === undefined) {
     set = new Set();
     (c as any)[sym] = set
   }
+  return set
+}
+
+export function mixin(c:Class, m:Iterable<Class>) {
   const p1 = c.prototype
-  const d1 = Object.getOwnPropertyDescriptors(p1)
-  for (const x of m.filter(x => !set.has(x))) {
+  const allSet = setFor(c, all)
+  const kset = setFor(c, kids)
+  for (const x of m) {
+    const d1 = Object.getOwnPropertyDescriptors(p1)
+    allSet.add(x)
+    setFor(x, kids).add(c)
     const p2 = x.prototype
     const d2 = Object.getOwnPropertyDescriptors(p2);
     for (const k in d1) delete(d2 as any)[k]
-    Object.defineProperties(p1, d2)
-    set.add(x)
+    Object.defineProperties(p1, d2)        
+  }
+  for (const k of kset) {
+    mixin(k, m)
   }
 }
 
@@ -208,6 +193,31 @@ export function mixed(target:Class|object, mixin:Class) {
   if (typeof target === "object") {
     target = target.constructor
   }
-  const set = (target as any)[sym] as Set<Class>
+  const set = (target as any)[all] as Set<Class>
   return set ? set.has(mixin) : false
+}
+
+export type Overwrite<T extends {}> = {
+  [k in keyof T]: T[k] extends (...args:infer A)=>infer R ? (original:(...args:A)=>R, ...args:A)=>R : never
+}
+
+export function overwrite<T extends object>(c:abstract new(...args:any[])=>T, o:abstract new(o:Partial<Overwrite<T>>)=>any):void {
+  const p1 = c.prototype
+  const d1 = Object.getOwnPropertyDescriptors(p1)
+  const p2 = o.prototype
+  const d2 = Object.getOwnPropertyDescriptors(p2)
+  for (const k in d2) {
+    if (k === "constructor") continue
+    const original = d1[k]?.value as Function
+    if (typeof(original) !== "function") continue
+    const n = d2[k]?.value as Function
+    if (typeof(n) !== "function") continue
+    const f = function(this:any, ...args:any[]):any {
+      return n.call(this, original, ...args)
+    }
+    Object.defineProperty(p1, k, {
+      ...d2[k],
+      value:f,
+    })
+  }
 }

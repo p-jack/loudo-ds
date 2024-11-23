@@ -1,7 +1,7 @@
 {
   "name": "loudo-ds-core",
   "type": "module",
-  "version": "0.0.18",
+  "version": "0.0.20",
   "description": "Core interfaces and classes for loudo data structures.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -26,9 +26,7 @@
   },
   "homepage": "https://github.com/p-jack/loudo-ds#readme",
   "devDependencies": {
-    "@types/web": "^0.0.138",
     "@vitest/coverage-v8": "^2.1.4",
-    "jsdom": "^25.0.1",
     "typescript": "^5.6.3",
     "vitest": "^2.1.4"
   }
