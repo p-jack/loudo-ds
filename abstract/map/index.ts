@@ -1,4 +1,4 @@
-import { Loud, Tin, mixin } from "loudo-ds-core"
+import { Loud, Tin, mixed, mixin } from "loudo-ds-core"
 
 export interface Entry<K extends {},V extends {}> {
   key: K
@@ -24,14 +24,41 @@ export interface BaseMap<K extends {},V extends {}> extends Tin<Entry<K,V>> {}
 mixin(BaseMap, [Tin])
 
 export abstract class MapChange<K extends {},V extends {}> {
+
   abstract put(key:K, value:V):V|undefined
+
+  putAll(input:MapInput<K,V>) {
+    if (input instanceof Map) {
+      for (const x of input) {
+        this.put(x[0], x[1])
+      }
+      return
+    }
+    if (Symbol.iterator in input) {
+      for (const x of input) {
+        if (Array.isArray(x)) {
+          this.put(x[0], x[1])
+        } else {
+          this.put(x.key, x.value)
+        }
+      }
+      return
+    }
+    for (const k in input) {
+      this.put(k as never, (input as any)[k] as never)
+    }
+  }
 }
 export interface MapChange<K extends {},V extends {}> extends BaseMap<K,V>, Loud<Entry<K,V>> {}
 mixin(MapChange, [BaseMap, Loud])
 
 export abstract class MapRemove<K extends {},V extends {}> {
-  abstract remove(key:K):V|undefined
+  abstract removeKey(key:K):V|undefined
   abstract clear():void
 }
 export interface MapRemove<K extends {},V extends {}> extends BaseMap<K,V>, Loud<Entry<K,V>> {}
 mixin(MapRemove, [BaseMap, Loud])
+
+export type Object<K extends {},V extends {}> = K extends string ? Record<string,V> : never
+export type MapInput<K extends {},V extends {}> = 
+  Map<K,V> | Iterable<Entry<K,V>|[K,V]> | Object<K,V>

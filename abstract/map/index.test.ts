@@ -1,5 +1,5 @@
-import { afterEach, test, expect, describe, beforeEach } from "vitest"
-import { BaseMap } from "."
+import { test, expect, describe, beforeEach } from "vitest"
+import { BaseMap, MapChange } from "./index"
 import { mixin } from "loudo-ds-core"
 
 
@@ -43,5 +43,68 @@ describe("BaseMap", () => {
   })
   test("values", () => {
     expect([...map.values]).toStrictEqual(["0", "1", "2"])
+  })
+})
+
+
+class TestMap {
+
+  readonly m = new Map<string,number>()
+
+  get keyEq():(n1:string,n2:string)=>boolean { return Object.is }
+  get valueEq():(s1:number,s2:number)=>boolean { return Object.is }
+  get size() { return this.m.size }
+  *[Symbol.iterator]() {
+    for (const x of this.m) {
+      yield({ key:x[0], value:x[1] })
+    }
+  }
+  get(key:string) {
+    return this.m.get(key)
+  }
+  put(key:string, value:number) {
+    const r = this.m.get(key)
+    this.m.set(key, value)
+    return r
+  }
+}
+interface TestMap extends MapChange<string,number> {}
+mixin(TestMap, [MapChange])
+
+describe("MapChange", () => {
+  describe("putAll", () => {
+    test("native map", () => {
+      const map = new Map<string,number>()
+      map.set("11", 11)
+      map.set("22", 22)
+      map.set("33", 33)
+      const m = new TestMap()
+      m.putAll(map)
+      expect([...m.keys]).toStrictEqual(["11", "22", "33"])
+      expect([...m.values]).toStrictEqual([11, 22, 33])
+    })
+    test("iterable of entries", () => {
+      const a1 = [{ key:"11", value:11 }, { key:"22", value:22 }, { key:"33", value:33 }]
+      const m = new TestMap()
+      m.putAll(a1)
+      expect([...m.keys]).toStrictEqual(["11", "22", "33"])
+      expect([...m.values]).toStrictEqual([11, 22, 33])
+    })
+    test("iterable of tuples", () => {
+      const m = new TestMap()
+      m.putAll([["11", 11], ["22", 22], ["33", 33]])
+      expect([...m.keys]).toStrictEqual(["11", "22", "33"])
+      expect([...m.values]).toStrictEqual([11, 22, 33])
+    })
+    test("object record", () => {
+      const m = new TestMap()
+      m.putAll({
+        "11": 11,
+        "22": 22,
+        "33": 33,
+      })
+      expect([...m.keys]).toStrictEqual(["11", "22", "33"])
+      expect([...m.values]).toStrictEqual([11, 22, 33])
+    })
   })
 })
