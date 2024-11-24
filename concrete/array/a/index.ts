@@ -1,13 +1,9 @@
-import { mixin, toTin, OnlyError } from "loudo-ds-core"
+import { mixin, toTin, OnlyError, Config } from "loudo-ds-core"
 import { AAdd, BaseA, ARemove, AChange } from "loudo-ds-array-interfaces";
-
-export interface Config<T> {
-  compare?:(a:T,b:T)=>boolean
-}
 
 export class RoA<T extends {}> {
 
-  constructor(protected readonly a:ArrayLike<T>, config:Config<T> = {}) {}
+  constructor(protected readonly a:ArrayLike<T>, protected readonly config:Config<T> = { eq:Object.is }) {}
 
   get first() { return this.a[0] }
   get last() { return this.a[this.a.length - 1] }
@@ -15,6 +11,8 @@ export class RoA<T extends {}> {
     if (this.a.length !== 1) throw new OnlyError()
     return this.a[0]!
   }
+
+  get eq() { return this.config.eq }
 
   get size() {
     return this.a.length
@@ -30,7 +28,7 @@ mixin(RoA, [BaseA])
 
 export class A<T extends {}> {
 
-  constructor(protected readonly a:T[], config:Config<T> = {}) {}
+  constructor(protected readonly a:T[], protected readonly config:Config<T> = { eq:Object.is }) {}
 
   static of<T extends {}>(...elements:T[]) {
     return new A(elements)

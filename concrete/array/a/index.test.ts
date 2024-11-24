@@ -32,6 +32,9 @@ describe("RoA", () => {
     expect(a.at(2)).toBe("C")
     expect(a.at(3)).toBe("D")
   })
+  test("eq", () => {
+    expect(a.eq === Object.is).toBe(true)
+  })
   test("findIndex", () => {
     expect(a.findIndex(x => x === "C")).toBe(2)
     expect(a.findIndex(x => x === "Z")).toBeUndefined()
