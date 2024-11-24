@@ -1,38 +1,7 @@
 # loudo-ds-core
 
-Provides core interfaces and base classes for loud data structures.
-
-## `BigIterable`
-
-The `BigIterable` interface extends a standard `Iterable` with the
-`map`, `filter`, and `reduce` functions, allowing you to easily chain
-them. You can make a regular iterable big via the `big` function:
-
-```TypeScript
-const set = new Set([1, 2, 3, 4, 5])
-const big = big(set)
-const sum = big.filter(x => x % 2 === 1).reduce(0, (a,x) => a + x)
-console.log(sum) // 9
-```
-
-## `DataStructure`
-
-The abstract `RODataStructure` class is the basis for every data structure
-in the `loudo-ds` family. Data structures have two type parameters:
-`T` which indicates the type of element the data structure contains,
-and `I` which indicates the type of index for the data structure.
-(Note that `I` might be `undefined` for unindexed data structures such
-as hash tables or heaps.)
-
-At minimum, a data structure consists of an iterator and a size property.
-Specific subclasses of `RODataStructure` provide additional properties
-and methods appropriate to the data structures they implement.
-
-Note that `RODataStructure` extends `BigIterable`, so all data structures
-support the `map`, `filter`, and `reduce` operations.
-
-The `RO` stands for read-only. The abstract `DataStructure` class extends
-`RODataStructure`, adding support for mutations and events.
+Provides core interfaces and base classes for loud data structures,
+as well as a mixin pattern for them.
 
 ## LEvent
 

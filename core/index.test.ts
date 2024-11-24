@@ -13,8 +13,9 @@ describe("Tin", () => {
     expect(ds3.empty).toStrictEqual(false)
   })
   test("eq", () => {
-    const ds0 = to([])
+    const ds0 = to<number>([])
     expect(ds0.eq === Object.is).toBe(true)
+    expect(ds0.eq(1, 1)).toBe(true)
   })
   test("forEach", () => {
     const ds = to([1, 2, 3, 4, 5])
@@ -24,7 +25,9 @@ describe("Tin", () => {
   })
   test("filter", () => {
     const ds = to([1, 2, 3, 4, 5, 6])
-    expect([...ds.filter(x => x % 2 == 0)]).toStrictEqual([2, 4, 6])
+    const f = ds.filter(x => x % 2 == 0)
+    expect([...f]).toStrictEqual([2, 4, 6])
+    expect(f.has(4)).toBe(true)
   })
   test("first", () => {
     expect(to([]).first).toBeUndefined()
@@ -189,4 +192,15 @@ test("overwrite", () => {
   overwrite(A, C)
   expect(o.baz(1, "A")).toBe("A:7-C")
   expect(o.notOverwritten2()).toBe("notOverwritten2")
+})
+
+
+class N extends Tin<number> {
+  *[Symbol.iterator]() {
+    for (let i = 0; i < 5; i++) yield (i + 1) * 11
+  }
+}
+
+test("default eq", () => {
+  expect(new N().eq === Object.is).toBe(true)
 })

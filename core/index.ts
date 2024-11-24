@@ -16,20 +16,18 @@ export interface LEvent<T extends {},I = undefined> {
 export type Ear<T extends {},I = undefined> = (event:LEvent<T,I>)=>void
 
 export interface Config<T extends {}> {
-  readonly eq?:(a:T,b:T)=>boolean
+  readonly eq:(a:T,b:T)=>boolean
 }
 
 export class OnlyError extends Error {}
 
 export abstract class Tin<T extends {}> {
 
-  protected abstract get config():Config<T>
-
   abstract [Symbol.iterator]():Iterator<T>
 
   get size() { return this.reduce(0, a => a + 1) }
   get empty() { return this.size === 0 }
-  get eq() { return this.config?.eq ?? Object.is }
+  get eq():(v1:T,v2:T)=>boolean { return Object.is }
 
   get first() {
     for (const x of this) return x;
@@ -67,7 +65,9 @@ export abstract class Tin<T extends {}> {
   }
 
   map<R extends {}>(f:(x:T)=>R, config?:Config<R>):Tin<R> {
-    return new RO(config ?? {}, this.map2(f))
+    const me = this
+    const o = { [Symbol.iterator]() { return me.map2(f) } }
+    return new RO(config ?? { eq:Object.is }, o)
   }
 
   private *filter2(f:(x:T)=>boolean) {
@@ -75,7 +75,10 @@ export abstract class Tin<T extends {}> {
   }
 
   filter(f:(x:T)=>boolean):Tin<T> {
-    return new RO(this.config, this.filter2(f))
+    const me = this
+    const o = { [Symbol.iterator]() { return me.filter2(f) } }
+    const conf:Config<T> = { eq(a, b) { return me.eq(a, b) } }
+    return new RO(conf, o)
   }
 
   reduce<A>(a:A, f:(a:A, x:T)=>A) {
@@ -94,13 +97,14 @@ export abstract class Tin<T extends {}> {
 }
 
 class RO<T extends {}> {
-  constructor(protected readonly config:Config<T>, readonly iterable:Iterable<T>) {}
+  constructor(private readonly config:Config<T>, readonly iterable:Iterable<T>) {}
+  get eq():(v1:T,v2:T)=>boolean { return this.config.eq }
   [Symbol.iterator]() { return this.iterable[Symbol.iterator]() }
 }
 interface RO<T extends {}> extends Tin<T> {}
 mixin(RO, [Tin])
 
-export function toTin<T extends {}>(iterable:Iterable<T>, config:Config<T> = {}):Tin<T> {
+export function toTin<T extends {}>(iterable:Iterable<T>, config:Config<T> = { eq:Object.is }):Tin<T> {
   return new RO(config, iterable)
 }
 
