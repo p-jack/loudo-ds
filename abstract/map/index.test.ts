@@ -16,6 +16,7 @@ class Nums {
     }
   }
   get keyEq():(n1:number,n2:number)=>boolean { return Object.is }
+  get valueEq():(s1:string,s2:string)=>boolean { return Object.is }
 }
 interface Nums extends BaseMap<number,string> {}
 mixin(Nums, [BaseMap])
@@ -24,6 +25,11 @@ describe("BaseMap", () => {
   let map = new Nums(3)
   beforeEach(() => { 
     map = new Nums(3)
+  })
+  test("eq", () => {
+    expect(map.eq({ key:1, value:"1"}, { key:1, value:"1" })).toBe(true)
+    expect(map.eq({ key:1, value:"1"}, { key:1, value:"2" })).toBe(false)
+    expect(map.eq({ key:1, value:"1"}, { key:2, value:"1" })).toBe(false)
   })
   test("hasKey", () => {
     expect(map.hasKey(-1)).toBe(false)
