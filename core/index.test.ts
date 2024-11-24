@@ -126,14 +126,6 @@ test("mixin", () => {
   class Z {
     over() { return "Z" }
   }
-  interface AI {
-    readonly field:string
-    method():string
-    [method]():string
-    readonly [field]:string
-    readonly p2:string|undefined
-    over():string
-  }
   abstract class A {
     get field() { return "abc" }
     method() { return "xyz" }
@@ -143,12 +135,12 @@ test("mixin", () => {
     get p2() { if (this.p === undefined) this.p = "123"; return this.p }
     over() { return "A" }
   }
-  interface Z extends A {}
-  expect(mixed(Z, A)).toBe(false)
-  mixin(Z, [A])
-  expect(mixed(Z, A)).toBe(true)
   const z = new Z()
-  expect(mixed(z, A)).toBe(true)
+  const o:object = z
+  expect(mixed(z, A)).toBeUndefined()
+  interface Z extends A {}
+  mixin(Z, [A])
+  expect(mixed(o, A)).toBe(z)
   expect(z.field).toBe("abc")
   expect(z.method()).toBe("xyz")
   expect(z[field]).toBe("abc")
@@ -161,8 +153,9 @@ test("mixin", () => {
   mixin(A, [B])
   interface A extends B {}
   expect(z.b()).toBe("b")
-  expect(mixed(z, B)).toBe(true)
-  expect(mixed(Z, B)).toBe(true)
+  expect(mixed(o, B)).toBe(z)
+  const o2 = mixed(o, B)
+  expect(o2.b()).toBe("b")
 })
 
 test("overwrite", () => {
