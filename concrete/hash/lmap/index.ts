@@ -1,5 +1,5 @@
 import { Config, mixin, toTin, OnlyError } from "loudo-ds-core"
-import { Entry, MapChange, MapRemove } from "loudo-ds-map-interfaces"
+import { Entry, MapChange, MapInput, MapRemove } from "loudo-ds-map-interfaces"
 
 interface Bucket<K,V> {
   key:K
@@ -12,7 +12,7 @@ interface Bucket<K,V> {
 
 type B<K,V> = Bucket<K,V>|null
 
-export interface HashConfig<K extends {},V extends {}> {
+export interface LMapConfig<K extends {},V extends {}> {
   readonly load?:number
   hashCode(key:K):number
   keyEq?(key1:K, key2:K):boolean
@@ -21,18 +21,19 @@ export interface HashConfig<K extends {},V extends {}> {
 
 export class LMap<K extends {},V extends {}> {
 
-  readonly config:HashConfig<K,V>
+  readonly config:LMapConfig<K,V>
   private buckets:B<K,V>[] = []
 
   firstB:B<K,V> = null
   lastB:B<K,V> = null
   #size = 0
 
-  constructor(config:HashConfig<K,V>) {
+  constructor(input:MapInput<K,V>, config:LMapConfig<K,V>) {
     this.config = config
     for (let i = 0; i < 4; i++) {
       this.buckets.push(null)
     }
+    this.putAll(input)
   }
 
   get size() { return this.#size }
@@ -120,7 +121,7 @@ export class LMap<K extends {},V extends {}> {
     return undefined
   }
 
-  remove(key:K):V|undefined {
+  removeKey(key:K):V|undefined {
     const hash = this.config.hashCode(key)
     let prev:B<K,V> = null
     const i = Math.abs(hash) % this.buckets.length

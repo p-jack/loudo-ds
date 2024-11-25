@@ -1,5 +1,5 @@
 import { test, expect, describe, beforeEach } from "vitest"
-import { HashConfig, LMap } from "./index"
+import { LMapConfig, LMap } from "./index"
 import { LEvent } from "loudo-ds-core"
 import { Entry } from "loudo-ds-map-interfaces"
 
@@ -22,7 +22,7 @@ function capture<T extends {}>():Capture<T> {
   }
 }
 
-interface Conf extends HashConfig<number,string> {
+interface Conf extends LMapConfig<number,string> {
   name: string
 }
 
@@ -42,11 +42,11 @@ function strip(a:Iterable<Entry<number,string>>) {
 
 
 for (const config of [config1, config2]) describe(config.name, () => {
-  let m = new LMap(config)
+  let m = new LMap([], config)
   let c = capture<Entry<number,string>>()
   beforeEach(() => {
     const map = new Map<number,string>()
-    m = new LMap(config)
+    m = new LMap([], config)
     m.put(11, "11")
     m.put(22, "22")
     m.put(33, "33")
@@ -100,9 +100,9 @@ for (const config of [config1, config2]) describe(config.name, () => {
     expect(m.last?.value).toBe("33")
   })
   test("only", () => {
-    expect(() => { new LMap(config).only }).toThrowError()
+    expect(() => { new LMap([], config).only }).toThrowError()
     expect(() => m.only).toThrowError()
-    const m = new LMap(config)
+    const m = new LMap([], config)
     m.put(1, "one")
     expect(strip([m.only])).toStrictEqual([{ key:1, value:"one" }])
   })
@@ -128,12 +128,12 @@ for (const config of [config1, config2]) describe(config.name, () => {
   })
   describe("remove", () => {
     test("missing", () => {
-      expect(m.remove(44)).toBeUndefined()
+      expect(m.removeKey(44)).toBeUndefined()
       expect(c.captured()).toBeUndefined()  
     })
     test("first", () => {
       expect(m.size).toBe(3)
-      expect(m.remove(11)).toBe("11")
+      expect(m.removeKey(11)).toBe("11")
       expect(m.size).toBe(2)
       expect(strip(m)).toStrictEqual([{ key:22, value:"22" }, { key:33, value:"33" }])
       expect(strip(c.removed())).toStrictEqual([{ key:11, value:"11" }])
@@ -145,7 +145,7 @@ for (const config of [config1, config2]) describe(config.name, () => {
     })
     test("middle", () => {
       expect(m.size).toBe(3)
-      expect(m.remove(22)).toBe("22")
+      expect(m.removeKey(22)).toBe("22")
       expect(m.size).toBe(2)
       expect(strip(m)).toStrictEqual([{ key:11, value:"11" }, { key:33, value:"33" }])
       expect(strip(c.removed())).toStrictEqual([{ key:22, value:"22" }])
@@ -157,7 +157,7 @@ for (const config of [config1, config2]) describe(config.name, () => {
     })
     test("last", () => {
       expect(m.size).toBe(3)
-      expect(m.remove(33)).toBe("33")
+      expect(m.removeKey(33)).toBe("33")
       expect(m.size).toBe(2)
       expect(strip(m)).toStrictEqual([{ key:11, value:"11" }, { key:22, value:"22" }])
       expect(strip(c.removed())).toStrictEqual([{ key:33, value:"33" }])
