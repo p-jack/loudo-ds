@@ -28,25 +28,7 @@ export abstract class MapChange<K extends {},V extends {}> {
   abstract put(key:K, value:V):V|undefined
 
   putAll(input:MapInput<K,V>) {
-    if (input instanceof Map) {
-      for (const x of input) {
-        this.put(x[0], x[1])
-      }
-      return
-    }
-    if (Symbol.iterator in input) {
-      for (const x of input) {
-        if (Array.isArray(x)) {
-          this.put(x[0], x[1])
-        } else {
-          this.put(x.key, x.value)
-        }
-      }
-      return
-    }
-    for (const k in input) {
-      this.put(k as never, (input as any)[k] as never)
-    }
+    putAll(this, input)
   }
 }
 export interface MapChange<K extends {},V extends {}> extends BaseMap<K,V>, Loud<Entry<K,V>> {}
@@ -62,3 +44,25 @@ mixin(MapRemove, [BaseMap, Loud])
 export type Object<K extends {},V extends {}> = K extends string ? Record<string,V> : never
 export type MapInput<K extends {},V extends {}> = 
   Map<K,V> | Iterable<Entry<K,V>|[K,V]> | Object<K,V>
+
+export function putAll<K extends {},V extends {}>(map:MapChange<K,V>, input:MapInput<K,V>) {
+  if (input instanceof Map) {
+    for (const x of input) {
+      map.put(x[0], x[1])
+    }
+    return
+  }
+  if (Symbol.iterator in input) {
+    for (const x of input) {
+      if (Array.isArray(x)) {
+        map.put(x[0], x[1])
+      } else {
+        map.put(x.key, x.value)
+      }
+    }
+    return
+  }
+  for (const k in input) {
+    map.put(k as never, (input as any)[k] as never)
+  }
+}
