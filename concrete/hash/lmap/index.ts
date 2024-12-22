@@ -1,4 +1,4 @@
-import { Config, mixin, toTin, OnlyError } from "loudo-ds-core"
+import { mixin, toTin, OnlyError } from "loudo-ds-core"
 import { Entry, MapChange, MapInput, MapRemove } from "loudo-ds-map-interfaces"
 
 interface Bucket<K,V> {
@@ -21,26 +21,27 @@ export interface LMapConfig<K extends {},V extends {}> {
 
 export class LMap<K extends {},V extends {}> {
 
-  readonly config:LMapConfig<K,V>
-  private buckets:B<K,V>[] = []
+  protected _config:LMapConfig<K,V>
+  protected buckets:B<K,V>[] = []
 
-  firstB:B<K,V> = null
-  lastB:B<K,V> = null
-  #size = 0
+  protected firstB:B<K,V> = null
+  protected lastB:B<K,V> = null
+  protected _size = 0
 
   constructor(input:MapInput<K,V>, config:LMapConfig<K,V>) {
-    this.config = config
+    this._config = config
     for (let i = 0; i < 4; i++) {
       this.buckets.push(null)
     }
     this.putAll(input)
   }
 
-  get size() { return this.#size }
+  get size() { return this._size }
+  get config() { return this._config }
   get first():Entry<K,V>|undefined { return this.firstB ?? undefined }
   get last():Entry<K,V>|undefined { return this.lastB ?? undefined }
   get only():Entry<K,V> {
-    if (this.#size !== 1) throw new OnlyError()
+    if (this._size !== 1) throw new OnlyError()
     return this.firstB!
   }
 
@@ -53,8 +54,12 @@ export class LMap<K extends {},V extends {}> {
   }
 
   get(key:K):V|undefined {
-    return this.bucket(key)?.value
+    const bucket = this.bucket(key)
+    this.afterGet(bucket)
+    return bucket?.value
   }
+
+  protected afterGet(bucket:B<K,V>) {}
 
   *[Symbol.iterator]():IterableIterator<Entry<K,V>> {
     for (let bucket = this.firstB; bucket !== null; bucket = bucket.next) {
@@ -85,7 +90,7 @@ export class LMap<K extends {},V extends {}> {
   }
 
   put(key:K, value:V):V|undefined {
-    if (this.#size / this.buckets.length >= this.load) this.grow()
+    if (this._size / this.buckets.length >= this.load) this.grow()
     const hashCode = this.config.hashCode(key)
     const bucket:Bucket<K,V> = {
       key, value, hashCode, prev:null, next:null, chain:null,
@@ -96,6 +101,7 @@ export class LMap<K extends {},V extends {}> {
       if (b.hashCode === hashCode && this.keyEq(key, b.key)) {
         const r = b.value
         b.value = value
+        this.afterGet(b)
         const elements = toTin([bucket as Entry<K,V>])
         this.fire({
           cleared:false, 
@@ -116,7 +122,7 @@ export class LMap<K extends {},V extends {}> {
       bucket.prev = this.lastB
       this.lastB = bucket
     }
-    this.#size++
+    this._size++
     this.fire({ cleared:false, added:{ elements:toTin([bucket as Entry<K,V>]), at:undefined, count:1 }})
     return undefined
   }
@@ -132,7 +138,7 @@ export class LMap<K extends {},V extends {}> {
       bucket = bucket.chain
     }
     if (bucket === null) return undefined
-    this.#size--
+    this._size--
     if (prev === null) this.buckets[i] = bucket.chain
     else prev.chain = bucket.chain
     if (this.firstB === bucket) this.firstB = bucket.next
@@ -152,7 +158,7 @@ export class LMap<K extends {},V extends {}> {
     if (this.size === 0) return
     this.firstB = null
     this.lastB = null
-    this.#size = 0
+    this._size = 0
     this.fire({ cleared:true })
   }
 
