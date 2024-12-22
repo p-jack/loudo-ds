@@ -1,7 +1,7 @@
 {
   "name": "loudo-ds-set-interfaces",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Core interfaces for loud sets.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -31,6 +31,6 @@
     "vitest": "^1.2.2"
   },
   "dependencies": {
-    "loudo-ds-core": "^0.0.20"
+    "loudo-ds-core": "^0.0.26"
   }
 }
