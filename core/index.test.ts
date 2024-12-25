@@ -140,10 +140,10 @@ test("mixin", () => {
   }
   const z = new Z()
   const o:object = z
-  expect(mixed(z, A)).toBeUndefined()
+  expect(mixed(z, A)).toBe(false)
   interface Z extends A {}
   mixin(Z, [A])
-  expect(mixed(o, A)).toBe(z)
+  expect(mixed(o, A)).toBe(true)
   expect(z.field).toBe("abc")
   expect(z.method()).toBe("xyz")
   expect(z[field]).toBe("abc")
@@ -156,9 +156,7 @@ test("mixin", () => {
   mixin(A, [B])
   interface A extends B {}
   expect(z.b()).toBe("b")
-  expect(mixed(o, B)).toBe(z)
-  const o2 = mixed(o, B)
-  expect(o2.b()).toBe("b")
+  expect(mixed(o, B)).toBe(true)
 })
 
 test("overwrite", () => {

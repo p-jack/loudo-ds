@@ -193,10 +193,10 @@ export function mixin(c:Class, m:Iterable<Class>) {
   }
 }
 
-export function mixed<C1 extends Class,C2 extends Class>(target:InstanceType<C1>, mixin:C2):(InstanceType<C1>&InstanceType<C2>)|undefined {
+export function mixed<C1 extends Class,C2 extends Class>(target:InstanceType<C1>, mixin:C2):boolean {
   const targetC = target.constructor
-  const set = (targetC as any)[all] as Set<Class>
-  return set && set.has(mixin) ? target as never : undefined
+  const set = targetC[all] as Set<Class>
+  return set !== undefined && set.has(mixin)
 }
 
 export type Overwrite<T extends {}> = {
