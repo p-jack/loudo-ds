@@ -182,7 +182,12 @@ export function mixin(c:Class, m:Iterable<Class>) {
   for (const x of m) {
     const d1 = Object.getOwnPropertyDescriptors(p1)
     allSet.add(x)
-    setFor(x, kids).add(c)
+    const xkids = setFor(x, kids)
+    xkids.add(c)
+    for (const a of setFor(x, all)) {
+      allSet.add(a)
+      xkids.add(a)
+    }
     const p2 = x.prototype
     const d2 = Object.getOwnPropertyDescriptors(p2);
     for (const k in d1) delete(d2 as any)[k]

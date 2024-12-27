@@ -157,6 +157,16 @@ test("mixin", () => {
   interface A extends B {}
   expect(z.b()).toBe("b")
   expect(mixed(o, B)).toBe(true)
+
+  class Tin<T extends {}> {}
+  class RoA<T extends {}> {}
+  interface RoA<T extends {}> extends Tin<T> {}
+  mixin(RoA, [Tin])
+  class BaseA<T extends {}> {}
+  interface BaseA<T extends {}> extends RoA<T> {}
+  mixin(BaseA, [RoA])
+  const x = new BaseA()
+  expect(mixed(x, Tin)).toBe(true)
 })
 
 test("overwrite", () => {
