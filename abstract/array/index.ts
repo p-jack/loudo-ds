@@ -10,7 +10,7 @@ export abstract class BaseA<T extends {}> {
   }
 
   protected abstract raw(i:number):T
- 
+
   *[Symbol.iterator]():Iterator<T> {
     for (let i = 0; i < this.size; i++) {
       yield this.raw(i)
@@ -52,6 +52,8 @@ mixin(BaseA, [Tin])
 
 export abstract class ARemove<T extends {}> {
 
+  get firstIndex():number { return 0 }
+
   abstract removeAt(i:number):T
   abstract clear():void
 
@@ -81,10 +83,11 @@ export abstract class ARemove<T extends {}> {
 
 }
 export interface ARemove<T extends {}> extends BaseA<T>, Loud<T,number> {}
-mixin(ARemove, [Loud, BaseA])
+mixin(ARemove, [BaseA, Loud])
 
 
 export abstract class AChange<T extends {}> {
+  get firstIndex():number { return 0 }
   abstract set(i:number, v:T):void
   reverse() {
     for (let i = 0; i < this.size / 2; i++) {
@@ -100,6 +103,8 @@ export interface AChange<T extends {}> extends BaseA<T>, Loud<T,number> {}
 mixin(AChange, [BaseA, Loud])
 
 export abstract class AAdd<T extends {}> {
+
+  get firstIndex():number { return 0 }
 
   abstract add(v:T, i?:number):void
 

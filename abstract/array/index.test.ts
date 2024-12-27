@@ -224,3 +224,27 @@ test("mixins", () => {
   expect(mixed(m, BaseA)).toBe(true)
   expect(mixed(m, Tin)).toBe(true)
 })
+
+describe("firstIndex", () => {
+  test("AAdd", () => {
+    class A {}
+    interface A extends AAdd<string> {}
+    mixin(A, [AAdd])
+    const a = new A()
+    expect(a.firstIndex).toBe(0)
+  })
+  test("AChange", () => {
+    class C {}
+    interface C extends AChange<string> {}
+    mixin(C, [AChange])
+    const c = new C()
+    expect(c.firstIndex).toBe(0)
+  })
+  test("ARemove", () => {
+    class R {}
+    interface R extends ARemove<string> {}
+    mixin(R, [ARemove])
+    const r = new R()
+    expect(r.firstIndex).toBe(0)
+  })
+})
