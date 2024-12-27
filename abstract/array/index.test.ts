@@ -1,5 +1,5 @@
 import { test, expect, describe, beforeEach } from "vitest"
-import { LEvent, mixin } from "loudo-ds-core"
+import { LEvent, Tin, mixed, mixin } from "loudo-ds-core"
 import { AAdd, BaseA, ARemove, AChange } from "./index"
 
 
@@ -211,4 +211,16 @@ describe("AddA", () => {
       expect(() => { m.addAll(["a", "b", "c"], 4) }).toThrow("index 4 > size 3")
     })
   })
+})
+
+test("mixins", () => {
+  const r = new R(4)
+  expect(mixed(r, BaseA)).toBe(true)
+  expect(mixed(r, Tin)).toBe(true)
+  const m = new M(["11", "22"])
+  expect(mixed(m, AAdd)).toBe(true)
+  expect(mixed(m, ARemove)).toBe(true)
+  expect(mixed(m, AChange)).toBe(true)
+  expect(mixed(m, BaseA)).toBe(true)
+  expect(mixed(m, Tin)).toBe(true)
 })
