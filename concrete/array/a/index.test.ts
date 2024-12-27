@@ -1,6 +1,7 @@
 import { test, expect, describe, beforeEach } from "vitest"
 import { A, RoA } from "./index"
-import { LEvent } from "loudo-ds-core"
+import { Tin, LEvent, mixed } from "loudo-ds-core"
+import { AAdd, AChange, ARemove, BaseA } from "loudo-ds-array-interfaces"
 
 interface Capture<T extends {}> {
   captured():LEvent<T,number>|undefined
@@ -25,6 +26,10 @@ describe("RoA", () => {
   let a = new RoA<string>([])
   beforeEach(() => {
     a = new RoA(["A", "B", "C", "D"])
+  })
+  test("mixins", () => {
+    expect(mixed(a, BaseA)).toBe(true)
+    expect(mixed(a, Tin)).toBe(true)
   })
   test("at", () => {
     expect(a.at(0)).toBe("A")
@@ -63,6 +68,13 @@ describe("A", () => {
     c = capture<string>()
     a.hear(c.ear)
     c.captured()
+  })
+  test("mixins", () => {
+    expect(mixed(a, BaseA)).toBe(true)
+    expect(mixed(a, Tin)).toBe(true)
+    expect(mixed(a, AChange)).toBe(true)
+    expect(mixed(a, ARemove)).toBe(true)
+    expect(mixed(a, AAdd)).toBe(true)
   })
   describe("add", () => {
     test("no index", () => {
