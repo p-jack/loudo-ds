@@ -125,15 +125,18 @@ describe("Loud", () => {
 
 test("mixin", () => {
   const field = Symbol("field")
-  const method = Symbol("method")  
+  const method = Symbol("method")
+  const over = Symbol("over")
   class Z {
     over() { return "Z" }
+    [over]() { return "Z" }
   }
   abstract class A {
     get field() { return "abc" }
     method() { return "xyz" }
     get [field]() { return "abc" }
     [method]() { return "xyz" }
+    [over]() { return "abc" }
     private p:string|undefined
     get p2() { if (this.p === undefined) this.p = "123"; return this.p }
     over() { return "A" }
@@ -150,6 +153,7 @@ test("mixin", () => {
   expect(z[method]()).toBe("xyz")
   expect(z.p2).toBe("123")
   expect(z.over()).toBe("Z")
+  expect(z[over]()).toBe("Z")
   abstract class B {
     b() { return "b" }
   }
@@ -170,6 +174,7 @@ test("mixin", () => {
 })
 
 test("overwrite", () => {
+  const over = Symbol("over")
   class A {
     count = 0
     baz(n:number, b:string):string {
@@ -177,6 +182,7 @@ test("overwrite", () => {
     }
     notOverwritten = "notOverwritten"
     notOverwritten2() { return "notOverwritten2" }
+    [over]() { return "not overwritten3" }
   }
   abstract class B {
     count = 5
@@ -184,6 +190,7 @@ test("overwrite", () => {
       return original.call(this, n + 1, b)
     }
     notOverwritten() {}
+    [over]() {}
   }
   const o = new A()
   o.count = 5
@@ -196,10 +203,12 @@ test("overwrite", () => {
     baz(original:(n:number,b:string)=>string, n:number, b:string) {
       return original.call(this, n, b) + "-C"
     }
+    [over]() {}
   }
   overwrite(A, C)
   expect(o.baz(1, "A")).toBe("A:7-C")
   expect(o.notOverwritten2()).toBe("notOverwritten2")
+  expect(o[over]()).toBe("not overwritten3")
 })
 
 

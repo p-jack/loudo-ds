@@ -190,7 +190,7 @@ export function mixin(c:Class, m:Iterable<Class>) {
     }
     const p2 = x.prototype
     const d2 = Object.getOwnPropertyDescriptors(p2);
-    for (const k in d1) delete(d2 as any)[k]
+    for (const k of Reflect.ownKeys(d1)) delete(d2 as any)[k]
     Object.defineProperties(p1, d2)        
   }
   for (const k of kset) {
