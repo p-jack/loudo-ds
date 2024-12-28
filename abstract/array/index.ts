@@ -45,6 +45,10 @@ export abstract class BaseA<T extends {}> {
       if (f(this.raw(i))) return i
     }
   }
+
+  abstract toSlice(start:number, end:number):BaseA<T>
+  abstract toReversed():BaseA<T>
+  abstract toSorted(cmp:(a:T,b:T)=>number):BaseA<T>
 }
 export interface BaseA<T extends {}> extends Tin<T> {}
 mixin(BaseA, [Tin])

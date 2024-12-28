@@ -81,7 +81,7 @@ class M {
     return this.a.length
   }
 
-  raw(i:number):string {
+  protected raw(i:number):string {
     return this.a[i]
   }
 
