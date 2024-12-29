@@ -1,88 +1,90 @@
 import { test, expect, describe } from "vitest"
-import { Tin, Loud, LEvent, mixed, mixin, overwrite, toTin } from "./index"
-
-const to = toTin
+import { Tin, Loud, LEvent, mixed, mixin, overwrite, tin } from "./index"
 
 describe("Tin", () => {
   test("empty", () => {
-    const ds0 = to([])
+    const ds0 = tin([])
     expect(ds0.empty).toStrictEqual(true)
-    const ds1 = to([11])
+    const ds1 = tin([11])
     expect(ds1.empty).toStrictEqual(false)
-    const ds3 = to([11, 22, 33])
+    const ds3 = tin([11, 22, 33])
     expect(ds3.empty).toStrictEqual(false)
   })
   test("eq", () => {
-    const ds0 = to<number>([])
+    const ds0 = tin<number>([])
     expect(ds0.eq === Object.is).toBe(true)
     expect(ds0.eq(1, 1)).toBe(true)
   })
   test("forEach", () => {
-    const ds = to([1, 2, 3, 4, 5])
+    const ds = tin([1, 2, 3, 4, 5])
     let sum = 0
     ds.forEach(x => sum += x)
     expect(sum).toBe(15)
   })
   test("filter", () => {
-    const ds = to([1, 2, 3, 4, 5, 6])
+    const ds = tin([1, 2, 3, 4, 5, 6])
     const f = ds.filter(x => x % 2 == 0)
     expect([...f]).toStrictEqual([2, 4, 6])
     expect(f.has(4)).toBe(true)
+    expect(f.size).toBe(3)
   })
   test("first", () => {
-    expect(to([]).first).toBeUndefined()
-    expect(to([11]).first).toBe(11)
-    expect(to([111, 222, 333]).first).toBe(111)
+    expect(tin([]).first).toBeUndefined()
+    expect(tin([11]).first).toBe(11)
+    expect(tin([111, 222, 333]).first).toBe(111)
   })
   test("has", () => {
-    const ds = to([11, 22, 33])
+    const ds = tin([11, 22, 33])
     expect(ds.has(11)).toStrictEqual(true)
     expect(ds.has(22)).toStrictEqual(true)
     expect(ds.has(33)).toStrictEqual(true)
     expect(ds.has(44)).toStrictEqual(false)
   })
   test("last", () => {
-    expect(to([]).last).toBeUndefined()
-    expect(to([11]).last).toBe(11)
-    expect(to([111, 222, 333]).last).toBe(333)
+    expect(tin([]).last).toBeUndefined()
+    expect(tin([11]).last).toBe(11)
+    expect(tin([111, 222, 333]).last).toBe(333)
   })
   test("map", () => {
-    const ds = to([1, 2, 3])
-    expect([...ds.map(x => x * 2)]).toStrictEqual([2, 4, 6])
+    const ds = tin([1, 2, 3])
+    const m = ds.map(x => x * 2)
+    expect([...m]).toStrictEqual([2, 4, 6])
+    expect(m.has(6)).toBe(true)
+    expect(m.size).toBe(3)
   })
   describe("only", () => {
     test("zero", () => {
-      expect(() => { to([]).only }).toThrowError()
+      expect(() => { tin([]).only }).toThrowError()
     })
     test("one", () => {
-      expect(to([1111]).only).toBe(1111)
+      expect(tin([1111]).only).toBe(1111)
     })
     test("many", () => {
-      expect(() => { to([1111, 2222, 3333]).only }).toThrowError()
+      expect(() => { tin([1111, 2222, 3333]).only }).toThrowError()
     })
   })
   test("reduce", () => {
-    const ds = to([1, 2, 3])
+    const ds = tin([1, 2, 3])
     expect(ds.reduce(0, (a,x) => a + x)).toStrictEqual(6)
   })
   test("size", () => {
-    expect(to([]).size).toBe(0)
-    expect(to([11]).size).toBe(1)
-    expect(to([11, 22, 33]).size).toBe(3)    
+    expect(tin([]).size).toBe(0)
+    expect(tin([11]).size).toBe(1)
+    expect(tin([11, 22, 33]).size).toBe(3)    
   })
   test("toJSON", () => {
-    const ds = to([1, 2, 3])
+    const ds = tin([1, 2, 3])
     expect(ds.toJSON()).toStrictEqual([1, 2, 3])
   })
   test("toString", () => {
-    const ds = to([1, 2, 3])
+    const ds = tin([1, 2, 3])
     expect(ds.toString()).toStrictEqual("[1,2,3]")
   })
 })
 
 class Arr {
   constructor(private readonly a:number[] = []) { }
-  protected get config() { return {} }
+  get size() { return this.a.length }
   [Symbol.iterator]() { return this.a[Symbol.iterator]() }
 }
 interface Arr extends Loud<number,undefined> {}
@@ -212,6 +214,7 @@ test("overwrite", () => {
 
 
 class N extends Tin<number> {
+  get size() { return 5 }
   *[Symbol.iterator]() {
     for (let i = 0; i < 5; i++) yield (i + 1) * 11
   }

@@ -14,17 +14,16 @@ export interface LEvent<T extends {},I = undefined> {
 
 export type Ear<T extends {},I = undefined> = (event:LEvent<T,I>)=>void
 
-export interface Config<T extends {}> {
-  readonly eq:(a:T,b:T)=>boolean
-}
-
 export class OnlyError extends Error {}
+
+const map = Symbol("map")
+const filter = Symbol("filter")
 
 export abstract class Tin<T extends {}> {
 
   abstract [Symbol.iterator]():Iterator<T>
 
-  get size() { return this.reduce(0, a => a + 1) }
+  abstract get size():number
   get empty() { return this.size === 0 }
   get eq():(v1:T,v2:T)=>boolean { return Object.is }
 
@@ -59,25 +58,24 @@ export abstract class Tin<T extends {}> {
     return false
   }
 
-  private *map2<R>(f:(x:T)=>R) {
+  private *[map]<R>(f:(x:T)=>R) {
     for (const x of this) yield f(x)
   }
 
-  map<R extends {}>(f:(x:T)=>R, config?:Config<R>):Tin<R> {
+  map<R extends {}>(f:(x:T)=>R, eq?:(a:R,b:R)=>boolean):Tin<R> {
     const me = this
-    const o = { [Symbol.iterator]() { return me.map2(f) } }
-    return new RO(config ?? { eq:Object.is }, o)
+    eq = eq ?? Object.is
+    return tin(() => me[map](f), eq, () => this.size)
   }
 
-  private *filter2(f:(x:T)=>boolean) {
+  private *[filter](f:(x:T)=>boolean) {
     for (const x of this) if (f(x)) yield x
   }
 
   filter(f:(x:T)=>boolean):Tin<T> {
     const me = this
-    const o = { [Symbol.iterator]() { return me.filter2(f) } }
-    const conf:Config<T> = { eq(a, b) { return me.eq(a, b) } }
-    return new RO(conf, o)
+    const eq = (a:T,b:T) => me.eq(a,b)
+    return tin(() => me[filter](f), eq)
   }
 
   reduce<A>(a:A, f:(a:A, x:T)=>A) {
@@ -95,16 +93,38 @@ export abstract class Tin<T extends {}> {
   
 }
 
-class RO<T extends {}> {
-  constructor(private readonly config:Config<T>, readonly iterable:Iterable<T>) {}
-  get eq():(v1:T,v2:T)=>boolean { return this.config.eq }
-  [Symbol.iterator]() { return this.iterable[Symbol.iterator]() }
-}
-interface RO<T extends {}> extends Tin<T> {}
-mixin(RO, [Tin])
+const size = Symbol("size")
+const eq = Symbol("eq")
+const gen = Symbol("gen")
 
-export function toTin<T extends {}>(iterable:Iterable<T>, config:Config<T> = { eq:Object.is }):Tin<T> {
-  return new RO(config, iterable)
+class Wrap<T extends {}> {
+
+  [eq]:(a:T,b:T)=>boolean
+  [size]?:()=>number
+  [gen]:()=>Iterator<T>
+
+  constructor(iterable:()=>Iterator<T>, equals:(a:T,b:T)=>boolean, getSize?:()=>number) {
+    this[eq] = equals
+    this[size] = getSize
+    this[gen] = iterable
+  }
+
+  get size():number {
+    const r = this[size]
+    if (r) return r()
+    return this.reduce(0, a => a + 1)
+  }
+
+  get eq():(v1:T,v2:T)=>boolean { return this[eq] }
+  [Symbol.iterator]() { return this[gen]() }
+
+}
+interface Wrap<T extends {}> extends Tin<T> {}
+mixin(Wrap, [Tin])
+
+export function tin<T extends {}>(gen:Iterable<T>|(()=>Iterator<T>), eq:(a:T,b:T)=>boolean = Object.is, size?:()=>number):Tin<T> {
+  const g:()=>Iterator<T> = typeof(gen) === "function" ? gen : () => gen[Symbol.iterator]()
+  return new Wrap(g, eq, size)
 }
 
 interface Held {
@@ -117,33 +137,36 @@ const registry = new FinalizationRegistry((held:Held) => {
   held.ds.unhear(held.ear)
 })
 
+const earSet = Symbol("earSet")
+const ears = Symbol("ears")
+
 export abstract class Loud<T extends {},I = undefined> {
 
-  private ears_:Set<Ear<T,I>>|undefined
-  private get ears() {
-    if (this.ears_ === undefined) { this.ears_ = new Set() }
-    return this.ears_
+  private [earSet]:Set<Ear<T,I>>|undefined
+  private get [ears]() {
+    if (this[earSet] === undefined) { this[earSet] = new Set() }
+    return this[earSet]
   }
 
   protected abstract get firstIndex():I
 
   hear(ear:Ear<T,I>) {
-    this.ears.add(ear)
+    this[ears].add(ear)
     if (this.empty) return
     ear({ cleared:false, added:{ elements:this, at:this.firstIndex }})
   }
 
   unhear(ear:Ear<T,I>) {
-    this.ears.delete(ear)
+    this[ears].delete(ear)
   }
 
   hearing(ear:Ear<T,I>) {
-    return this.ears.has(ear)
+    return this[ears].has(ear)
   }
 
   /* v8 ignore next 4 */
   protected fire(event:LEvent<T,I>) {
-    for (const x of this.ears) { x(event) }
+    for (const x of this[ears]) { x(event) }
     return event
   }
 
