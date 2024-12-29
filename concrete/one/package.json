@@ -1,7 +1,7 @@
 {
   "name": "loudo-ds-one",
   "type": "module",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "description": "Tin that holds one item.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -33,6 +33,6 @@
     "vitest": "^2.1.4"
   },
   "dependencies": {
-    "loudo-ds-core": "^0.0.34"
+    "loudo-ds-core": "^0.0.36"
   }
 }

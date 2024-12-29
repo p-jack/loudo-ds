@@ -10,6 +10,8 @@ export class One<T extends {}> {
   get only() { return this.v }
   *[Symbol.iterator]() { yield this.v }
 
+  static of<T extends {}>(v:T) { return new One(v) }
+
 }
 export interface One<T extends {}> extends Tin<T> {}
 mixin(One, [Tin])

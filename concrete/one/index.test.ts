@@ -1,9 +1,8 @@
-import { test, expect, describe, beforeEach } from "vitest"
-import { Tin, LEvent, mixed } from "loudo-ds-core"
+import { test, expect } from "vitest"
 import { One } from "./index"
 
 test("One", () => {
-  let one = new One("111")
+  let one = One.of("111")
   expect(one.size).toBe(1)
   expect(one.empty).toBe(false)
   expect(one.has("111")).toBe(true)
