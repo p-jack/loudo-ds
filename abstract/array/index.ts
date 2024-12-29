@@ -100,7 +100,7 @@ export abstract class AChange<T extends {}> {
       this.set(i, this.raw(r))
       this.set(r, temp)
     }
-    this.fire({cleared:true, added:{ elements:this, at:0, count:this.size }})
+    this.fire({cleared:true, added:{ elements:this, at:0 }})
   }
 }
 export interface AChange<T extends {}> extends BaseA<T>, Loud<T,number> {}

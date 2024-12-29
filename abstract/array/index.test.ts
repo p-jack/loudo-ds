@@ -191,6 +191,7 @@ describe("SetA", () => {
     expect(c.added()).toStrictEqual(["D", "C", "B", "A"])
     const event = c.captured()
     expect(event?.cleared).toBe(true)
+    expect(event?.added?.at).toBe(0)
   })
 })
 
