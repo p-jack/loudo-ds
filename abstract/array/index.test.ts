@@ -1,5 +1,5 @@
 import { test, expect, describe, beforeEach } from "vitest"
-import { LEvent, Tin, mixed, mixin } from "loudo-ds-core"
+import { LEvent, Tin, mixed, mixin, tin } from "loudo-ds-core"
 import { AAdd, BaseA, ARemove, AChange } from "./index"
 
 
@@ -69,6 +69,21 @@ describe("RoA", () => {
     expect(() => { a0.only }).toThrowError()
     const a1 = new R(1)
     expect(a1.only).toBe(11)
+  })
+  test("reversed", () => {
+    expect([...a.reversed()]).toStrictEqual([44, 33, 22, 11])
+    const x = tin(a.reversed())
+    expect([...x]).toStrictEqual([44, 33, 22, 11])
+    expect([...x]).toStrictEqual([44, 33, 22, 11])
+  })
+  test("slice", () => {
+    expect([...a.slice(0)]).toStrictEqual([11, 22, 33, 44])
+    expect([...a.slice(1)]).toStrictEqual([22, 33, 44])
+    expect([...a.slice(2, 3)]).toStrictEqual([33])
+    expect([...a.slice(2, 2)]).toStrictEqual([])
+    expect(() => { [...a.slice(-1)] }).toThrowError()
+    expect(() => { [...a.slice(0, 5)] }).toThrowError()
+    expect(() => { [...a.slice(2, 1)] }).toThrowError()
   })
 })
 
@@ -170,13 +185,6 @@ describe("RemoveA", () => {
         expect([...a]).toStrictEqual([])
       })
     })
-  })
-  test("remove", () => {
-    const m = new M(["A", "B", "C"])
-    expect(m.remove("B")).toBe(true)
-    expect([...m]).toStrictEqual(["A", "C"])
-    expect(m.remove("D")).toBe(false)
-    expect([...m]).toStrictEqual(["A", "C"])
   })
 })
 

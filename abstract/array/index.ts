@@ -1,6 +1,9 @@
-import { Loud, OnlyError, Tin, mixin } from "loudo-ds-core"
+import { Loud, OnlyError, Tin, mixin, tin } from "loudo-ds-core"
 
 export class BoundsError extends Error {}
+
+const reversed = Symbol("reversed")
+const slice = Symbol("slice")
 
 export abstract class BaseA<T extends {}> {
 
@@ -46,9 +49,27 @@ export abstract class BaseA<T extends {}> {
     }
   }
 
-  abstract toSlice(start:number, end:number):BaseA<T>
-  abstract toReversed():BaseA<T>
-  abstract toSorted(cmp:(a:T,b:T)=>number):BaseA<T>
+  private *[reversed]() {
+    for (let i = this.size - 1; i >= 0; i--) yield this.raw(i)
+  }
+
+  reversed() {
+    const me = this
+    return tin(() => me[reversed](), this.eq, () => this.size)
+  }
+
+  private *[slice](start:number, end:number) {
+    for (let i = start; i < end; i++) yield(this.raw(i))
+  }
+
+  slice(start:number, end?:number) {
+    end = end ?? this.size
+    this.bounds(start)
+    this.bounds(end, true)
+    if (end < start) throw new BoundsError(`start ${start} > end ${end}`)
+    const me = this
+    return tin(() => me[slice](start, end), this.eq, () => end - start)
+  }
 }
 export interface BaseA<T extends {}> extends Tin<T> {}
 mixin(BaseA, [Tin])
@@ -60,17 +81,6 @@ export abstract class ARemove<T extends {}> {
 
   abstract removeAt(i:number):T
   abstract clear():void
-
-  remove(x:T):boolean {
-    const { eq, size } = this
-    for (let i = 0; i < size; i++) {
-      if (eq(x, this.raw(i))) {
-        this.removeAt(i)
-        return true
-      }
-    }
-    return false
-  }
 
   drop(f:(x:T,i:number)=>boolean):number {
     let i = 0, max = this.size, r = 0
