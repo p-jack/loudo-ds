@@ -114,7 +114,6 @@ describe("Loud", () => {
       expect(captured!.removed).toBeUndefined()
       expect(captured!.added).not.toBeUndefined()
       expect(captured!.added!.at).toBeUndefined()
-      expect(captured!.added!.count).toBe(3)
       expect([...captured!.added!.elements]).toStrictEqual([1, 2, 3])
       expect(ds.hearing(ear)).toStrictEqual(true)
       ds.unhear(ear)

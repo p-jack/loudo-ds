@@ -4,7 +4,6 @@ const all = Symbol("mixins")
 export interface Mod<T extends {},I = undefined> {
   elements: Tin<T>
   at: I
-  count: number
 }
 
 export interface LEvent<T extends {},I = undefined> {
@@ -131,7 +130,7 @@ export abstract class Loud<T extends {},I = undefined> {
   hear(ear:Ear<T,I>) {
     this.ears.add(ear)
     if (this.empty) return
-    ear({ cleared:false, added:{ elements:this, at:this.firstIndex, count:this.size }})
+    ear({ cleared:false, added:{ elements:this, at:this.firstIndex }})
   }
 
   unhear(ear:Ear<T,I>) {
