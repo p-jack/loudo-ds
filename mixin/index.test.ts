@@ -1,0 +1,180 @@
+import { test, expect, describe } from "vitest"
+import { mixed, mixin, augment } from "./index"
+
+describe("mixin", () => {
+  const keepGetter = Symbol("keepGetter")
+  const keepMethod = Symbol("keepMethod")
+  const newGetter = Symbol("newGetter")
+  const newMethod = Symbol("newMethod")
+  abstract class StateOnDemand {
+    private mixinField_?:number
+    protected abstract get field():number
+    get mixinField() {
+      return this.mixinField_ ?? 1000
+    }
+    set mixinField(n:number) {
+      this.mixinField_ = n
+    }
+  }
+  class NoReplace {
+    get keepGetter():string { throw new Error() }
+    get [keepGetter]():string { throw new Error() }
+    keepMethod(n:number):string { throw new Error() }
+    [keepMethod](n:number):string { throw new Error() }
+  }
+  abstract class NewStuff {
+    get newGetter() { return "newGetter-" + (this.mixinField + this.field) }
+    get [newGetter]() { return "[newGetter]-" + (this.mixinField + this.field) }
+    newMethod(n:number) { return "newMethod-" + (this.mixinField + this.field + n) }
+    [newMethod](n:number) { return "[newMethod]-" + (this.mixinField + this.field + n) }
+  }
+  interface NewStuff extends StateOnDemand {}
+  mixin(NewStuff, [StateOnDemand]) // note both are abstract
+  abstract class Override {
+    keepMethod(n:number) { return "override-" + (this.mixinField + this.field + n) }
+  }
+  interface Override extends StateOnDemand {}
+  mixin(Override, [StateOnDemand])
+  abstract class Recurse {
+    get recurse() { return "recurse" }
+  }
+  interface NewStuff extends Recurse {}
+  mixin(NewStuff, [Recurse])
+  abstract class NotMixedParent {}
+  abstract class NotMixedChild {}
+  mixin(NotMixedChild, [NotMixedParent])
+  expect(() => { mixin(() => {}, [NewStuff])}).toThrowError()
+  expect(() => { mixin(NewStuff, [() => {}]) }).toThrowError()
+  expect(() => { mixin(StateOnDemand, [NewStuff])}).toThrowError()
+  test("private constructor", () => {
+    class Private {
+      private constructor() {}
+      field = 100
+      get keepGetter() { return "keepGetter-" + (this.field + this.mixinField) }
+      get [keepGetter]() { return "[keepGetter]-" + (this.field + this.mixinField) }
+      keepMethod(n:number) { return "keepMethod-" + (this.field + n + this.mixinField) }
+      [keepMethod](n:number) { return "[keepMethod]-" + (this.field + n + this.mixinField) }
+      static make():Private { return new Private() }
+    }
+    interface Private extends NoReplace, NewStuff {}
+    mixin(Private, [NoReplace, NewStuff])
+    const instance = Private.make()
+    instance.mixinField = 2000
+    const o:object = instance
+    if (mixed(o, NoReplace)) expect(o.keepGetter).toBe("keepGetter-2100")
+    else expect(false).toBe(true)
+    if (mixed(o, StateOnDemand)) expect(o.mixinField).toBe(2000)
+    else expect(false).toBe(true)
+    if (mixed(o, Recurse)) expect(o.recurse).toBe("recurse")
+    else expect(false).toBe(true)
+    if (mixed(o, NewStuff)) expect(o.newGetter).toBe("newGetter-2100")
+    expect(mixed(o, NotMixedParent)).toBe(false)
+    expect(mixed(o, NotMixedChild)).toBe(false)    
+    expect(instance.keepGetter).toBe("keepGetter-2100")
+    expect(instance[keepGetter]).toBe("[keepGetter]-2100")
+    expect(instance.keepMethod(30)).toBe("keepMethod-2130")
+    expect(instance[keepMethod](30)).toBe("[keepMethod]-2130")
+    expect(instance.newGetter).toBe("newGetter-2100")
+    expect(instance[newGetter]).toBe("[newGetter]-2100")
+    expect(instance.newMethod(30)).toBe("newMethod-2130")
+    expect(instance[newMethod](30)).toBe("[newMethod]-2130")
+    expect(instance.recurse).toBe("recurse")
+    mixin(Private, Override, { overrides:["keepMethod"] })
+    expect(instance.keepMethod(30)).toBe("override-2130")
+  })
+  test("protected constructor", () => {
+    class Protected {
+      protected constructor() {}
+      field = 100
+      get keepGetter() { return "keepGetter-" + (this.field + this.mixinField) }
+      get [keepGetter]() { return "[keepGetter]-" + (this.field + this.mixinField) }
+      keepMethod(n:number) { return "keepMethod-" + (this.field + n + this.mixinField) }
+      [keepMethod](n:number) { return "[keepMethod]-" + (this.field + n + this.mixinField) }
+      static make():Protected { return new Protected() }
+    }
+    interface Protected extends NoReplace, NewStuff {}
+    mixin(Protected, [NoReplace, NewStuff])
+    const instance = Protected.make()
+    instance.mixinField = 2000
+    const o:object = instance
+    if (mixed(o, NoReplace)) expect(o.keepGetter).toBe("keepGetter-2100")
+    else expect(false).toBe(true)
+    if (mixed(o, StateOnDemand)) expect(o.mixinField).toBe(2000)
+    else expect(false).toBe(true)
+    if (mixed(o, Recurse)) expect(o.recurse).toBe("recurse")
+    else expect(false).toBe(true)
+    if (mixed(o, NewStuff)) expect(o.newGetter).toBe("newGetter-2100")
+    expect(mixed(o, NotMixedParent)).toBe(false)
+    expect(mixed(o, NotMixedChild)).toBe(false)    
+    expect(instance.keepGetter).toBe("keepGetter-2100")
+    expect(instance[keepGetter]).toBe("[keepGetter]-2100")
+    expect(instance.keepMethod(30)).toBe("keepMethod-2130")
+    expect(instance[keepMethod](30)).toBe("[keepMethod]-2130")
+    expect(instance.newGetter).toBe("newGetter-2100")
+    expect(instance[newGetter]).toBe("[newGetter]-2100")
+    expect(instance.newMethod(30)).toBe("newMethod-2130")
+    expect(instance[newMethod](30)).toBe("[newMethod]-2130")
+    expect(instance.recurse).toBe("recurse")
+    mixin(Protected, Override, { overrides:["keepMethod"] })
+    expect(instance.keepMethod(30)).toBe("override-2130")
+  })
+  test("public constructor", () => {
+    class Public {
+      constructor() {}
+      field = 100
+      get keepGetter() { return "keepGetter-" + (this.field + this.mixinField) }
+      get [keepGetter]() { return "[keepGetter]-" + (this.field + this.mixinField) }
+      keepMethod(n:number) { return "keepMethod-" + (this.field + n + this.mixinField) }
+      [keepMethod](n:number) { return "[keepMethod]-" + (this.field + n + this.mixinField) }
+    }
+    interface Public extends NoReplace, NewStuff {}
+    mixin(Public, [NoReplace, NewStuff])
+    const instance = new Public()
+    instance.mixinField = 2000
+    const o:object = instance
+    if (mixed(o, NoReplace)) expect(o.keepGetter).toBe("keepGetter-2100")
+    else expect(false).toBe(true)
+    if (mixed(o, StateOnDemand)) expect(o.mixinField).toBe(2000)
+    else expect(false).toBe(true)
+    if (mixed(o, Recurse)) expect(o.recurse).toBe("recurse")
+    else expect(false).toBe(true)
+    if (mixed(o, NewStuff)) expect(o.newGetter).toBe("newGetter-2100")
+    expect(mixed(o, NotMixedParent)).toBe(false)
+    expect(mixed(o, NotMixedChild)).toBe(false)    
+    expect(instance.keepGetter).toBe("keepGetter-2100")
+    expect(instance[keepGetter]).toBe("[keepGetter]-2100")
+    expect(instance.keepMethod(30)).toBe("keepMethod-2130")
+    expect(instance[keepMethod](30)).toBe("[keepMethod]-2130")
+    expect(instance.newGetter).toBe("newGetter-2100")
+    expect(instance[newGetter]).toBe("[newGetter]-2100")
+    expect(instance.newMethod(30)).toBe("newMethod-2130")
+    expect(instance[newMethod](30)).toBe("[newMethod]-2130")
+    expect(instance.recurse).toBe("recurse")
+    mixin(Public, Override, { overrides:["keepMethod"] })
+    expect(instance.keepMethod(30)).toBe("override-2130")
+  })
+
+})
+
+test("augment", () => {
+  const f = Symbol("f")
+  class A {
+    count = 0
+    f(n:number, b:string):string {
+      return b + ":" + (n + this.count)
+    }
+    [f](n:number) { return n + this.count }
+  }
+  const o = new A()
+  o.count = 5
+  expect(o.f(1, "A")).toBe("A:6")
+  augment(A, "f", (original, ths, n, b) => {
+    return original.call(ths, n + 1, b)
+  })
+  expect(o.f(1, "A")).toBe("A:7")
+  expect(o[f](1)).toBe(6)
+  augment(A, f, (original, ths, n) => {
+    return original.call(ths, n + 1)
+  })
+  expect(o[f](1)).toBe(7)
+})
