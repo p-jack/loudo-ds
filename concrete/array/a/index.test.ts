@@ -1,7 +1,8 @@
 import { test, expect, describe, beforeEach } from "vitest"
 import { A, RoA } from "./index"
-import { Tin, LEvent, mixed } from "loudo-ds-core"
+import { LEvent, Sized, Stash } from "loudo-ds-core"
 import { AAdd, AChange, ARemove, BaseA } from "loudo-ds-array-interfaces"
+import { mixed } from "loudo-mixin"
 
 interface Capture<T extends {}> {
   captured():LEvent<T,number>|undefined
@@ -23,13 +24,9 @@ function capture<T extends {}>():Capture<T> {
 }
 
 describe("RoA", () => {
-  let a = new RoA<string>([])
+  let a = RoA.of<string>()
   beforeEach(() => {
-    a = new RoA(["A", "B", "C", "D"])
-  })
-  test("mixins", () => {
-    expect(mixed(a, BaseA)).toBe(true)
-    expect(mixed(a, Tin)).toBe(true)
+    a = RoA.of("A", "B", "C", "D")
   })
   test("at", () => {
     expect(a.at(0)).toBe("A")
@@ -45,8 +42,27 @@ describe("RoA", () => {
     expect(a.findIndex(x => x === "Z")).toBeUndefined()
   })
   test("first", () => { expect(a.first).toBe("A") })
+  test("from", () => {
+    const eq = (a:string,b:string) => a.toLowerCase() === b.toLowerCase()
+    const a2 = RoA.from(["A", "b", "C"], { eq })
+    expect(a2.eq).toStrictEqual(eq)
+    expect([...a2]).toStrictEqual(["A", "b", "C"])
+  })
+  test("fromJSON", () => {
+    const a2 = RoA.fromJSON(a, ["A", "B", "C", "D"])
+    expect(a2.equals(a)).toBe(true)
+    expect(() => { RoA.fromJSON(a, "")}).toThrowError()
+    expect(() => { RoA.fromJSON(a, null)}).toThrowError()
+    expect(() => { RoA.fromJSON(a, 0)}).toThrowError()
+    expect(() => { RoA.fromJSON(a, {})}).toThrowError()
+  })
   test("iterator", () => { expect([...a]).toStrictEqual(["A", "B", "C", "D"]) })
   test("last", () => { expect(a.last).toBe("D") })
+  test("mixins", () => {
+    expect(mixed(a, BaseA)).toBe(true)
+    expect(mixed(a, Sized)).toBe(true)
+    expect(mixed(a, Stash)).toBe(true)
+  })
   describe("only", () => {
     test("many", () => {
       expect(() => { a.only }).toThrowError()
@@ -61,7 +77,7 @@ describe("RoA", () => {
 })
 
 describe("A", () => {
-  let a = A.from<string>([])
+  let a = A.of<string>()
   let c = capture<string>()
   beforeEach(() => {
     a = A.of("A", "B", "C", "D")
@@ -71,7 +87,8 @@ describe("A", () => {
   })
   test("mixins", () => {
     expect(mixed(a, BaseA)).toBe(true)
-    expect(mixed(a, Tin)).toBe(true)
+    expect(mixed(a, Sized)).toBe(true)
+    expect(mixed(a, Stash)).toBe(true)
     expect(mixed(a, AChange)).toBe(true)
     expect(mixed(a, ARemove)).toBe(true)
     expect(mixed(a, AAdd)).toBe(true)
@@ -83,7 +100,6 @@ describe("A", () => {
       expect(c.added()).toStrictEqual(["E"])
       const event = c.captured()
       expect(event?.cleared).toStrictEqual(false)
-      expect(event?.added?.count).toBe(1)
       expect(event?.added?.at).toBe(4)
     })
     test("with index", () => {
@@ -92,7 +108,6 @@ describe("A", () => {
       expect(c.added()).toStrictEqual(["Z"])
       const event = c.captured()
       expect(event?.cleared).toStrictEqual(false)
-      expect(event?.added?.count).toBe(1)
       expect(event?.added?.at).toBe(0)
       expect(() => { a.add("Z", 100) }).toThrow("index 100 > size 5")
     })
@@ -104,7 +119,6 @@ describe("A", () => {
       expect(c.added()).toStrictEqual(["E", "F"])
       const event = c.captured()
       expect(event?.cleared).toStrictEqual(false)
-      expect(event?.added?.count).toBe(2)
       expect(event?.added?.at).toBe(4)
     })
     test("with index", () => {
@@ -113,9 +127,18 @@ describe("A", () => {
       expect(c.added()).toStrictEqual(["Z", "Y"])
       const event = c.captured()
       expect(event?.cleared).toStrictEqual(false)
-      expect(event?.added?.count).toBe(2)
       expect(event?.added?.at).toBe(0)
     })
+  })
+  test("constructor", () => {
+    const a = A.of("11", "22", "33")
+    const c = capture<string>()
+    a.hear(c.ear)
+    expect(c.added()).toStrictEqual(["11", "22", "33"])
+    const evt = c.captured()
+    expect(evt?.cleared).toBe(false)
+    expect(evt?.added?.at).toBe(0)
+    expect(evt?.removed).toBeUndefined()
   })
   test("clear", () => {
     a.clear()
@@ -128,6 +151,23 @@ describe("A", () => {
     expect(event?.removed).toBeUndefined()
     expect(event?.added).toBeUndefined()
   })
+  test("firstIndex", () => {
+    expect(a.firstIndex).toBe(0)
+  })
+  test("from", () => {
+    const eq = (a:string,b:string) => a.toLowerCase() === b.toLowerCase()
+    const a2 = A.from(["A", "b", "C"], { eq })
+    expect(a2.eq).toStrictEqual(eq)
+    expect([...a2]).toStrictEqual(["A", "b", "C"])
+  })
+  test("fromJSON", () => {
+    const a2 = A.fromJSON(a, ["A", "B", "C", "D"])
+    expect(a2.equals(a)).toBe(true)
+    expect(() => { A.fromJSON(a, "")}).toThrowError()
+    expect(() => { A.fromJSON(a, null)}).toThrowError()
+    expect(() => { A.fromJSON(a, 0)}).toThrowError()
+    expect(() => { A.fromJSON(a, {})}).toThrowError()
+  })
   test("removeAt", () => {
     expect(() => { a.removeAt(-1) }).toThrow("negative array index: -1")
     a.removeAt(2)
@@ -136,7 +176,6 @@ describe("A", () => {
     const event = c.captured()
     expect(event?.cleared).toStrictEqual(false)
     expect(event?.removed?.at).toBe(2)
-    expect(event?.removed?.count).toBe(1)
   })
   test("set", () => {
     a.set(1, "X")
@@ -146,7 +185,7 @@ describe("A", () => {
 
 test("from", () => {
   const set = new Set(["A", "B", "C"])
-  const a = A.from(set)
+  const a = new A(set)
   expect(a.size).toBe(3)
   expect([...a]).toStrictEqual(["A", "B", "C"])
 })
@@ -156,11 +195,3 @@ test("of", () => {
   expect(a.size).toBe(3)
   expect([...a]).toStrictEqual(["A", "B", "C"])
 })
-
-// test("ify", () => {
-//   const a1 = La.of("a", "b")
-//   const a2 = La.ify(a1)
-//   expect(a1 === a2).toBe(true)
-//   const a3 = La.ify([...a1])
-//   expect(a1 === a3).toBe(false)
-// })
