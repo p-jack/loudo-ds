@@ -98,6 +98,7 @@ export class A<T extends {}> {
   set(at:number, v:T) {
     const old = this.at(at)
     this[a][at] = v
+    if (this.eq(old, v)) return
     this.fire({
       cleared: false,
       removed: { elements:One.of(old), at },

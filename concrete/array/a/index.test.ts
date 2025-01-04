@@ -180,6 +180,14 @@ describe("A", () => {
   test("set", () => {
     a.set(1, "X")
     expect([...a]).toStrictEqual(["A", "X", "C", "D"])
+    expect(c.removed()).toStrictEqual(["B"])
+    expect(c.added()).toStrictEqual(["X"])
+    const event = c.captured()
+    expect(event?.cleared).toStrictEqual(false)
+    expect(event?.removed?.at).toBe(1)
+    expect(event?.added?.at).toBe(1)
+    a.set(1, "X")
+    expect(c.captured()).toBeUndefined()
   })
 })
 

@@ -1,7 +1,7 @@
 {
   "name": "loudo-ds-array",
   "type": "module",
-  "version": "0.0.18",
+  "version": "0.0.20",
   "description": "Loud array implementation.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
