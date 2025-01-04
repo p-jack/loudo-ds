@@ -56,7 +56,7 @@ mixin(MapRemove, [BaseMap, Loud])
 
 export type Object<K extends {},V extends {}> = K extends string ? Record<string,V> : never
 export type MapInput<K extends {},V extends {}> = 
-  Map<K,V> | Iterable<Entry<K,V>|[K,V]> | Object<K,V>
+  Iterable<Entry<K,V>> | Iterable<[K,V]> | Object<K,V>
 
 export function forEach<K extends {},V extends {}>(input:MapInput<K,V>, f:(k:K, v:V)=>void) {
   if (input instanceof Map) {
