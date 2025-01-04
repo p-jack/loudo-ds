@@ -85,7 +85,7 @@ export class LMap<K extends {},V extends {}> {
     return bucket?.value
   }
 
-  protected afterGet(bucket:B<K,V>) {}
+  protected afterGet(_bucket:B<K,V>) {}
 
   *[Symbol.iterator]():Iterator<Entry<K,V>> {
     for (let bucket = this[firstB]; bucket !== null; bucket = bucket.next) {
@@ -129,7 +129,6 @@ export class LMap<K extends {},V extends {}> {
         const r = b.value
         b.value = value
         this.afterGet(b)
-        const elements = One.of(bucket as Entry<K,V>)
         this.fire({
           cleared:false, 
           added:{ elements:One.of(bucket as Entry<K,V>), at:undefined },
