@@ -37,6 +37,10 @@ describe("BaseMap", () => {
     expect(map.hasKey(2)).toBe(true)
     expect(map.hasKey(3)).toBe(false)
   })
+  test("hasAllKeys", () => {
+    expect(map.hasAllKeys([0, 2])).toBe(true)
+    expect(map.hasAllKeys([5, 2])).toBe(false)
+  })
   test("keys", () => {
     expect([...map.keys]).toStrictEqual([0, 1, 2])
     expect([...map.keys]).toStrictEqual([0, 1, 2])

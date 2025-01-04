@@ -18,6 +18,10 @@ export abstract class BaseMap<K extends {},V extends {}> {
     }
   }
   hasKey(key:K):boolean { return this.get(key) !== undefined }
+  hasAllKeys(keys:Iterable<K>) {
+    for (const k of keys) if (!this.hasKey(k)) return false
+    return true
+  }
   get keys():Sized<K> { return this.map(x => x.key) }
   get values():Sized<V> { return this.map(x => x.value) }
 }
