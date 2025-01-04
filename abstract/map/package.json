@@ -1,7 +1,7 @@
 {
   "name": "loudo-ds-map-interfaces",
   "type": "module",
-  "version": "0.0.12",
+  "version": "0.0.14",
   "description": "Core interfaces for loud maps (dictionaries.)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,10 +27,10 @@
   "homepage": "https://github.com/p-jack/loudo-ds-core#readme",
   "devDependencies": {
     "@vitest/coverage-v8": "^1.2.2",
-    "typescript": "^5.3.3",
+    "typescript": "^5.7",
     "vitest": "^1.2.2"
   },
   "dependencies": {
-    "loudo-ds-core": "^0.0.26"
+    "loudo-ds-core": "^0.0.38"
   }
 }

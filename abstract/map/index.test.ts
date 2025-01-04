@@ -1,7 +1,6 @@
 import { test, expect, describe, beforeEach } from "vitest"
-import { BaseMap, MapChange } from "./index"
-import { mixin } from "loudo-ds-core"
-
+import { BaseMap, MapChange, MapRemove } from "./index"
+import { mixin } from "loudo-mixin"
 
 class Nums {
   constructor(readonly limit = 5) {}
@@ -40,8 +39,10 @@ describe("BaseMap", () => {
   })
   test("keys", () => {
     expect([...map.keys]).toStrictEqual([0, 1, 2])
+    expect([...map.keys]).toStrictEqual([0, 1, 2])
   })
   test("values", () => {
+    expect([...map.values]).toStrictEqual(["0", "1", "2"])
     expect([...map.values]).toStrictEqual(["0", "1", "2"])
   })
 })
@@ -67,9 +68,14 @@ class TestMap {
     this.m.set(key, value)
     return r
   }
+  removeKey(key:string) {
+    const r = this.m.get(key)
+    if (r) this.m.delete(key)
+    return r
+  }
 }
-interface TestMap extends MapChange<string,number> {}
-mixin(TestMap, [MapChange])
+interface TestMap extends MapChange<string,number>, MapRemove<string,number> {}
+mixin(TestMap, [MapChange, MapRemove])
 
 describe("MapChange", () => {
   describe("putAll", () => {
@@ -106,5 +112,11 @@ describe("MapChange", () => {
       expect([...m.keys]).toStrictEqual(["11", "22", "33"])
       expect([...m.values]).toStrictEqual([11, 22, 33])
     })
+  })
+  test("drop", () => {
+    const m = new TestMap()
+    m.putAll({"11":11, "22":22, "33":33, "44":44, "55":55})
+    expect(m.drop((k,v) => k === "22" || v % 2 === 0)).toBe(2)
+    expect([...m.keys]).toStrictEqual(["11", "33", "55"])
   })
 })

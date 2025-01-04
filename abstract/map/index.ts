@@ -1,4 +1,5 @@
-import { Loud, Tin, mixed, mixin } from "loudo-ds-core"
+import { Loud, Sized } from "loudo-ds-core"
+import { mixin } from "loudo-mixin"
 
 export interface Entry<K extends {},V extends {}> {
   key: K
@@ -17,11 +18,11 @@ export abstract class BaseMap<K extends {},V extends {}> {
     }
   }
   hasKey(key:K):boolean { return this.get(key) !== undefined }
-  get keys():Tin<K> { return this.map(x => x.key) }
-  get values():Tin<V> { return this.map(x => x.value) }
+  get keys():Sized<K> { return this.map(x => x.key) }
+  get values():Sized<V> { return this.map(x => x.value) }
 }
-export interface BaseMap<K extends {},V extends {}> extends Tin<Entry<K,V>> {}
-mixin(BaseMap, [Tin])
+export interface BaseMap<K extends {},V extends {}> extends Sized<Entry<K,V>> {}
+mixin(BaseMap, [Sized])
 
 export abstract class MapChange<K extends {},V extends {}> {
 
@@ -38,6 +39,13 @@ mixin(MapChange, [BaseMap, Loud])
 export abstract class MapRemove<K extends {},V extends {}> {
   abstract removeKey(key:K):V|undefined
   abstract clear():void
+  drop(f:(k:K,v:V)=>boolean) {
+    const set = new Set(this.filter(x => f(x.key, x.value)).map(x => x.key))
+    for (const x of set) {
+      this.removeKey(x)
+    }
+    return set.size
+  }
 }
 export interface MapRemove<K extends {},V extends {}> extends BaseMap<K,V>, Loud<Entry<K,V>> {}
 mixin(MapRemove, [BaseMap, Loud])
