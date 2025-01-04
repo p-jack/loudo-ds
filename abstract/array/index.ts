@@ -1,4 +1,5 @@
-import { Loud, OnlyError, Tin, mixin, tin } from "loudo-ds-core"
+import { Loud, OnlyError, Sized, Stash, sized } from "loudo-ds-core"
+import { mixin, mixed } from "loudo-mixin"
 
 export class BoundsError extends Error {}
 
@@ -36,10 +37,24 @@ export abstract class BaseA<T extends {}> {
     return this.raw(0)
   }
 
+  equals(a:Iterable<T>) {
+    const { size, eq } = this
+    if (mixed(a, Sized) && a.size !== size) return false
+    if (mixed(a, Stash) && a.eq !== eq) return false
+    let i = 0
+    for (const x of a) {
+      if (i >= size) return false
+      if (!eq(x, this.raw(i))) return false
+      i++
+    }
+    return i === size
+  }
+
   findIndex(f:(x:T)=>boolean, from = 0):number|undefined {
     for (let i = from; i < this.size; i++) {
       if (f(this.raw(i))) return i
     }
+    return undefined
   }
 
   findLastIndex(f:(x:T)=>boolean, from?:number):number|undefined {
@@ -47,6 +62,7 @@ export abstract class BaseA<T extends {}> {
     for (let i = from; i >= 0; i--) {
       if (f(this.raw(i))) return i
     }
+    return undefined
   }
 
   private *[reversed]() {
@@ -55,7 +71,7 @@ export abstract class BaseA<T extends {}> {
 
   reversed() {
     const me = this
-    return tin(() => me[reversed](), this.eq, () => this.size)
+    return sized(() => me[reversed](), () => this.size, this.eq)
   }
 
   private *[slice](start:number, end:number) {
@@ -68,11 +84,11 @@ export abstract class BaseA<T extends {}> {
     this.bounds(end, true)
     if (end < start) throw new BoundsError(`start ${start} > end ${end}`)
     const me = this
-    return tin(() => me[slice](start, end), this.eq, () => end - start)
+    return sized(() => me[slice](start, end), () => end - start, this.eq)
   }
 }
-export interface BaseA<T extends {}> extends Tin<T> {}
-mixin(BaseA, [Tin])
+export interface BaseA<T extends {}> extends Sized<T> {}
+mixin(BaseA, [Sized])
 
 
 export abstract class ARemove<T extends {}> {

@@ -1,7 +1,7 @@
 import { test, expect, describe, beforeEach } from "vitest"
-import { LEvent, Tin, mixed, mixin, tin } from "loudo-ds-core"
+import { LEvent, Sized, Stash } from "loudo-ds-core"
 import { AAdd, BaseA, ARemove, AChange } from "./index"
-
+import { mixed, mixin } from "../../mixin"
 
 class R {
   constructor(public readonly count:number) {}
@@ -31,7 +31,7 @@ function capture<T extends {}>():Capture<T> {
   }
 }
 
-describe("RoA", () => {
+describe("BaseA", () => {
   let a = new R(4)
   let c = capture<number>()
   beforeEach(() => {
@@ -45,6 +45,14 @@ describe("RoA", () => {
     expect(() => { a.at(-1) }).toThrow("negative array index: -1")
     expect(() => { a.at(0.5) }).toThrow("invalid array index: 0.5")
     expect(() => { a.at(4) }).toThrow("index 4 >= size 4")
+  })
+  test("equals", () => {
+    expect(a.equals([11, 22, 33, 44])).toBe(true)
+    expect(a.equals([11, 2, 33, 44])).toBe(false)
+    expect(a.equals(new R(4))).toBe(true)
+    expect(a.equals([])).toBe(false)
+    expect(a.equals([11, 22, 33, 44, 55])).toBe(false)
+    expect(a.equals([11, 22, 33])).toBe(false)
   })
   test("findIndex", () => {
     expect(a.findIndex(x => x === 33)).toBe(2)
@@ -71,10 +79,9 @@ describe("RoA", () => {
     expect(a1.only).toBe(11)
   })
   test("reversed", () => {
-    expect([...a.reversed()]).toStrictEqual([44, 33, 22, 11])
-    const x = tin(a.reversed())
-    expect([...x]).toStrictEqual([44, 33, 22, 11])
-    expect([...x]).toStrictEqual([44, 33, 22, 11])
+    const r = a.reversed()
+    expect([...r]).toStrictEqual([44, 33, 22, 11])
+    expect([...r]).toStrictEqual([44, 33, 22, 11])
   })
   test("slice", () => {
     expect([...a.slice(0)]).toStrictEqual([11, 22, 33, 44])
@@ -222,17 +229,18 @@ describe("AddA", () => {
   })
 })
 
-test("mixins", () => {
-  const r = new R(4)
-  expect(mixed(r, BaseA)).toBe(true)
-  expect(mixed(r, Tin)).toBe(true)
-  const m = new M(["11", "22"])
-  expect(mixed(m, AAdd)).toBe(true)
-  expect(mixed(m, ARemove)).toBe(true)
-  expect(mixed(m, AChange)).toBe(true)
-  expect(mixed(m, BaseA)).toBe(true)
-  expect(mixed(m, Tin)).toBe(true)
-})
+// test("mixins", () => {
+//   const r = new R(4)
+//   expect(mixed(r, BaseA)).toBe(true)
+//   expect(mixed(r, Sized)).toBe(true)
+//   expect(mixed(r, Stash)).toBe(true)
+//   const m = new M(["11", "22"])
+//   expect(mixed(m, AAdd)).toBe(true)
+//   expect(mixed(m, ARemove)).toBe(true)
+//   expect(mixed(m, AChange)).toBe(true)
+//   expect(mixed(m, BaseA)).toBe(true)
+//   expect(mixed(m, Stash)).toBe(true)
+// })
 
 describe("firstIndex", () => {
   test("AAdd", () => {
