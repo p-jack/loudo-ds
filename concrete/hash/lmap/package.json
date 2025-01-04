@@ -1,7 +1,7 @@
 {
   "name": "loudo-ds-lmap",
   "type": "module",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "description": "Flexible loud map.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -33,6 +33,7 @@
     "vitest": "^2.1.4"
   },
   "dependencies": {
-    "loudo-ds-map-interfaces": "^0.0.12"
+    "loudo-ds-map-interfaces": "^0.0.18",
+    "loudo-ds-one": "^0.0.8"
   }
 }
