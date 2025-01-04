@@ -1,7 +1,8 @@
 import { test, expect, describe, beforeEach } from "vitest"
 import { RoNMap, NMap } from "./index"
-import { LEvent } from "loudo-ds-core"
-import { Entry } from "loudo-ds-map-interfaces"
+import { LEvent, Stash, Sized, Loud } from "loudo-ds-core"
+import { Entry, MapChange, MapRemove } from "loudo-ds-map-interfaces"
+import { mixed } from "loudo-mixin"
 
 interface Capture<T extends {}> {
   captured():LEvent<T>|undefined
@@ -30,7 +31,7 @@ describe("RoNMap", () => {
     map.set(11, "11")
     map.set(22, "22")
     map.set(33, "33")
-    m = new RoNMap(map)
+    m = RoNMap.of([11,"11"], [22,"22"], [33,"33"])
   })
   test("constructor", () => {
     const m = new RoNMap<string,number>({
@@ -41,6 +42,11 @@ describe("RoNMap", () => {
     expect(m.size).toBe(3)
     expect([...m.keys]).toStrictEqual(["one", "two", "three"])
     expect([...m.values]).toStrictEqual([11, 22, 33])
+  })
+  test("from", () => {
+    const m = RoNMap.from<string,number>({"one":11, "two":22})
+    expect([...m.keys]).toStrictEqual(["one", "two"])
+    expect([...m.values]).toStrictEqual([11, 22])
   })
   test("get", () => {
     expect(m.get(11)).toBe("11")
@@ -69,6 +75,10 @@ describe("RoNMap", () => {
   test("keys", () => {
     expect([...m.keys]).toStrictEqual([11, 22, 33])
   })
+  test("mixins", () => {
+    expect(mixed(m, Stash)).toBe(true)
+    expect(mixed(m, Sized)).toBe(true)
+  })
   test("size", () => {
     expect(m.size).toBe(3)
   })
@@ -85,11 +95,7 @@ describe("NMap", () => {
   let m = new NMap(new Map<number,string>())
   let c = capture<Entry<number,string>>()
   beforeEach(() => {
-    const map = new Map<number,string>()
-    map.set(11, "11")
-    map.set(22, "22")
-    map.set(33, "33")
-    m = new NMap(map)
+    m = NMap.of([11,"11"], [22,"22"], [33,"33"])
     c = capture()
     m.hear(c.ear)
     c.captured()
@@ -104,6 +110,11 @@ describe("NMap", () => {
     expect([...m.keys]).toStrictEqual(["one", "two", "three"])
     expect([...m.values]).toStrictEqual([11, 22, 33])
   })
+  test("from", () => {
+    const m = NMap.from<string,number>({"one":11, "two":22})
+    expect([...m.keys]).toStrictEqual(["one", "two"])
+    expect([...m.values]).toStrictEqual([11, 22])
+  })
   test("put", () => {
     expect(m.put(44, "44")).toBeUndefined()
     expect(m.size).toBe(4)
@@ -112,7 +123,6 @@ describe("NMap", () => {
     expect(evt1?.cleared).toBe(false)
     expect(evt1?.removed).toBeUndefined()
     expect(evt1?.added?.at).toBeUndefined()
-    expect(evt1?.added?.count).toBe(1)
     expect(m.put(11, "eleven")).toBe("11")
     expect(m.size).toBe(4)
     expect(c.removed()).toStrictEqual([{ key:11, value:"11" }])
@@ -120,9 +130,7 @@ describe("NMap", () => {
     const evt2 = c.captured()
     expect(evt2?.cleared).toBe(false)
     expect(evt2?.removed?.at).toBeUndefined()
-    expect(evt2?.removed?.count).toBe(1)
     expect(evt2?.added?.at).toBeUndefined()
-    expect(evt2?.added?.count).toBe(1)
   })
   test("remove", () => {
     expect(m.removeKey(44)).toBeUndefined()
@@ -135,7 +143,6 @@ describe("NMap", () => {
     expect(evt?.cleared).toBe(false)
     expect(evt?.added).toBeUndefined()
     expect(evt?.removed?.at).toBeUndefined()
-    expect(evt?.removed?.count).toBe(1)
   })
   test("clear", () => {
     m.clear()
@@ -144,5 +151,13 @@ describe("NMap", () => {
     expect(c.captured()?.cleared).toBe(true)
     m.clear()
     expect(c.captured()).toBeUndefined()
+  })
+  test("mixins", () => {
+    expect(mixed(m, Stash)).toBe(true)
+    expect(mixed(m, Sized)).toBe(true)
+    expect(mixed(m, Loud)).toBe(true)
+    expect(mixed(m, RoNMap)).toBe(true)
+    expect(mixed(m, MapChange)).toBe(true)
+    expect(mixed(m, MapRemove)).toBe(true)
   })
 })

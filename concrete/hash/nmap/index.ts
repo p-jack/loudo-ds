@@ -1,24 +1,37 @@
-import { toTin, mixin } from "loudo-ds-core"
+import { sized } from "loudo-ds-core"
 import { BaseMap, Entry, MapChange, MapInput, MapRemove, forEach } from "loudo-ds-map-interfaces";
+import { One } from "loudo-ds-one";
+import { mixin } from "loudo-mixin"
 
+export const m = Symbol("m")
+
+export function mapify<K extends {},V extends {}>(input:MapInput<K,V>) {
+  if (input instanceof Map) return input
+  const r = new Map<K,V>()
+  forEach(input, (k,v) => r.set(k,v))
+  return r
+}
 
 export class RoNMap<K extends {},V extends {}> {
 
-  protected m:Map<K,V> = new Map<K,V>()
+  protected [m]:Map<K,V>
 
   constructor(input:MapInput<K,V>) {
-    if (input instanceof Map) {
-      this.m = input
-    } else {
-      this.m = new Map()
-      forEach(input, (k,v) => this.m.set(k,v))
-    }
+    this[m] = mapify(input)
   }
 
-  get size() { return this.m.size }
+  static of<K extends {},V extends {}>(...entries:Entry<K,V>[]|[K,V][]) {
+    return new RoNMap(entries)
+  }
+
+  static from<K extends {},V extends {}>(input:MapInput<K,V>) {
+    return new RoNMap(input)
+  }
+
+  get size() { return this[m].size }
 
   *[Symbol.iterator]():Iterator<Entry<K,V>> {
-    for (const x of this.m) {
+    for (const x of this[m]) {
       yield { key:x[0], value:x[1] }
     }
   }
@@ -27,13 +40,19 @@ export class RoNMap<K extends {},V extends {}> {
 
   get valueEq():(v1:V,v2:V)=>boolean { return Object.is }
 
-  get(k:K) { return this.m.get(k) }
+  get(k:K) { return this[m].get(k) }
 
-  hasKey(k:K) { return this.m.has(k) }
+  hasKey(k:K) { return this[m].has(k) }
 
-  get keys() { return toTin(this.m.keys()) }
+  get keys() {
+    const map = this[m]
+    return sized(() => map.keys(), () => map.size, this.keyEq)
+  }
 
-  get values() { return toTin(this.m.values()) }
+  get values() {
+    const map = this[m]
+    return sized(() => map.values(), () => map.size, this.valueEq)
+  }
 
 }
 export interface RoNMap<K extends {},V extends {}> extends BaseMap<K,V> {}
@@ -42,37 +61,39 @@ mixin(RoNMap, [BaseMap])
 
 export class NMap<K extends {},V extends {}> {
 
+  protected [m]:Map<K,V>
+
   constructor(input:MapInput<K,V>) {
-    if (input instanceof Map) {
-      this.m = input
-    } else {
-      this.m = new Map()
-      forEach(input, (k,v) => this.m.set(k,v))
-    }
+    this[m] = mapify(input)
+  }
+
+  static of<K extends {},V extends {}>(...entries:Entry<K,V>[]|[K,V][]) {
+    return new NMap(entries)   
+  }
+
+  static from<K extends {},V extends {}>(input:MapInput<K,V>) {
+    return new NMap(input)
   }
 
   put(k:K, v:V) {
-    const { m } = this
-    const r = m.get(k)
-    m.set(k, v)
+    const map = this[m]
+    const r = map.get(k)
+    map.set(k, v)
     if (r === undefined) this.fire({
       cleared:false,
       added:{
-        elements:toTin([{ key:k, value:v }]),
-        count:1,
+        elements:One.of({ key:k, value:v }),
         at:undefined
       }
     })
     else this.fire({
       cleared:false,
       removed:{
-        elements:toTin([{ key:k, value:r }]),
-        count:1,
+        elements:One.of({ key:k, value:r }),
         at:undefined,
       },
       added:{
-        elements:toTin([{ key:k, value:v }]),
-        count:1,
+        elements:One.of({ key:k, value:v }),
         at:undefined
       }
     })
@@ -80,14 +101,13 @@ export class NMap<K extends {},V extends {}> {
   }
 
   removeKey(k:K) {
-    const { m } = this
+    const map = this[m]
     const r = this.get(k)
-    m.delete(k)
+    map.delete(k)
     if (r !== undefined) this.fire({
       cleared: false,
       removed: {
-        elements:toTin([{ key:k, value:r }]),
-        count:1,
+        elements:One.of({ key:k, value:r }),
         at:undefined,
       }
     })
@@ -95,8 +115,9 @@ export class NMap<K extends {},V extends {}> {
   }
 
   clear() {
-    if (this.m.size === 0) return
-    this.m.clear()
+    const map = this[m]
+    if (map.size === 0) return
+    map.clear()
     this.fire({ cleared:true })
   }
 }
