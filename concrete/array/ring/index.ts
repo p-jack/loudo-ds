@@ -5,25 +5,45 @@ import { mixin, mixed } from "loudo-mixin"
 const array = Symbol("array")
 const size = Symbol("size")
 const start = Symbol("start")
-const eq = Symbol("eq")
+const config = Symbol("config")
+
+interface Conf<T extends {}> {
+  limit:number
+  eq:(a:T,b:T)=>boolean
+}
+
+export interface Config<T> {
+  limit:number
+  eq?:(a:T,b:T)=>boolean
+}
 
 export class Ring<T extends {}> {
 
-  protected readonly [eq]:(a:T,b:T)=>boolean
+  protected readonly [config]:Conf<T>
   protected readonly [array]:T[]
   protected [size] = 0
   protected [start] = 0
 
-  constructor(elements:Iterable<T>, limit:number, _eq:(a:T,b:T)=>boolean = Object.is) {
+  constructor(elements:Iterable<T>, _config:Config<T>) {
+    const limit = _config.limit
     if (!Number.isSafeInteger(limit) || limit < 1) throw new TypeError("invalid Ring limit")
     this[array] = new Array(limit)
-    this[eq] = _eq
+    this[config] = { limit, eq:_config.eq ?? Object.is}
     this.pushAll(elements)
+  }
+
+  static from<T extends {}>(elements:Iterable<T>, config:Config<T>) {
+    return new Ring(elements, config)
+  }
+
+  static fromJSON<T extends {}>(sample:Ring<T>, json:any) {
+    if (!Array.isArray(json)) throw new TypeError("can't make Ring from " + typeof(json))
+    return new Ring(json, sample[config])
   }
 
   get size() { return this[size] }
   get full() { return this[size] === this[array].length }
-  get eq() { return this[eq] }
+  get eq() { return this[config].eq }
 
   protected ring(i:number):number {
     const strt = this[start]
@@ -159,14 +179,14 @@ function aize<T extends {}>(i:Iterable<T>, eq:(a:T, b:T)=>boolean):BaseA<T> {
 
 class Arr<T extends {}> {
 
-  [eq]:(a:T,b:T)=>boolean
+  [config]:(a:T,b:T)=>boolean
 
   constructor(private readonly a:T[], _eq:(a:T,b:T)=>boolean) {
-    this[eq] = _eq
+    this[config] = _eq
   }
 
   get size() { return this.a.length }
-  get eq() { return this[eq] }
+  get eq() { return this[config] }
   raw(i:number) { return this.a[i]! }
   
 }
@@ -174,15 +194,15 @@ interface Arr<T extends {}> extends BaseA<T> {}
 mixin(Arr, [BaseA])
 
 class AWrap<T extends {}> {
-  [eq]:(a:T,b:T)=>boolean
+  [config]:(a:T,b:T)=>boolean
 
   constructor(
     private readonly a:BaseA<T>,
     _eq:(a:T,b:T)=>boolean
-  ) { this[eq] = _eq }
+  ) { this[config] = _eq }
 
   get size() { return this.a.size }
-  get eq() { return this[eq] }
+  get eq() { return this[config] }
   raw(i:number) { return this.a.at(i) }
 
 }

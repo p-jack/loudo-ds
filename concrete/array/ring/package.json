@@ -1,7 +1,7 @@
 {
   "name": "loudo-ds-ring",
   "type": "module",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "Loud ring buffer implementation.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

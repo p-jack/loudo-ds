@@ -27,24 +27,24 @@ function capture<T extends {}>():Capture<T> {
 type C = new()=>Ring<string>
 
 describe("Ring", () => {
-  let full = new Ring<string>([], 5)
+  let full = new Ring<string>([], { limit:5 })
   let fullC = capture<string>()
-  let partial = new Ring<string>([], 5)
+  let partial = new Ring<string>([], { limit:5 })
   let partialC = capture<string>()
   beforeEach(() => {
-    full = new Ring(["A", "B", "C", "D", "E"], 5)
+    full = Ring.from(["A", "B", "C", "D", "E"], { limit:5 })
     fullC = capture<string>()
     full.hear(fullC.ear)
     fullC.captured()
-    partial = new Ring(["A", "B"], 5)
+    partial = new Ring(["A", "B"], { limit:5 })
     partialC = capture<string>()
     partial.hear(partialC.ear)
     partialC.captured()
   })
   test("constructor", () => {
-    expect(() => { new Ring(["1", "2"], 0.5) }).toThrowError()
-    expect(() => { new Ring(["1", "2"], 0) }).toThrowError()
-    expect(() => { new Ring(["1", "2"], -100) }).toThrowError()
+    expect(() => { new Ring(["1", "2"], { limit:0.5 }) }).toThrowError()
+    expect(() => { new Ring(["1", "2"], { limit:0}) }).toThrowError()
+    expect(() => { new Ring(["1", "2"], { limit:-100 }) }).toThrowError()
   })
   test("mixins", () => {
     expect(mixed(full, AChange)).toBe(true)
@@ -62,6 +62,14 @@ describe("Ring", () => {
   test("eq", () => {
     expect(full.eq === Object.is).toBe(true)
     expect(partial.eq === Object.is).toBe(true)
+  })
+  test("fromJSON", () => {
+    const r = Ring.fromJSON(full, ["A", "B"])
+    expect(r.equals(partial)).toBe(true)
+    expect(() => { Ring.fromJSON(full, "")}).toThrowError()
+    expect(() => { Ring.fromJSON(full, 0)}).toThrowError()
+    expect(() => { Ring.fromJSON(full, null)}).toThrowError()
+    expect(() => { Ring.fromJSON(full, {})}).toThrowError()
   })
   test("full", () => {
     expect(full.full).toBe(true)
