@@ -153,6 +153,26 @@ describe("mixin", () => {
     mixin(Public, Override, { overrides:["keepMethod"] })
     expect(instance.keepMethod(30)).toBe("override-2130")
   })
+  test("kids", () => {
+    abstract class Mixin1<T extends {}> {
+      abstract get mixin1():T
+      toString() { return this.mixin1.toString() }
+    }
+    class Target<T extends {}> {
+      constructor(readonly value:T) {}
+      get mixin1() { return this.value }
+    }
+    interface Target<T extends {}> extends Mixin1<T> {}
+    mixin(Target, [Mixin1])
+    const instance = new Target(111)
+    expect(instance.toString()).toBe("111")
+    class Mixin2<T extends {}> {
+      convert(x:T) { return x.toString() }
+    }
+    interface Mixin1<T extends {}> extends Mixin2<number>{}
+    mixin(Mixin1, [Mixin2])
+    expect(instance.convert(222)).toBe("222")
+  })
 
 })
 
@@ -164,17 +184,18 @@ test("augment", () => {
       return b + ":" + (n + this.count)
     }
     [f](n:number) { return n + this.count }
+    get g() { return 5 }
   }
-  const o = new A()
-  o.count = 5
-  expect(o.f(1, "A")).toBe("A:6")
+  const a = new A()
+  a.count = 5
+  expect(a.f(1, "A")).toBe("A:6")
   augment(A, "f", (original, ths, n, b) => {
     return original.call(ths, n + 1, b)
   })
-  expect(o.f(1, "A")).toBe("A:7")
-  expect(o[f](1)).toBe(6)
+  expect(a.f(1, "A")).toBe("A:7")
+  expect(a[f](1)).toBe(6)
   augment(A, f, (original, ths, n) => {
     return original.call(ths, n + 1)
   })
-  expect(o[f](1)).toBe(7)
+  expect(a[f](1)).toBe(7)
 })

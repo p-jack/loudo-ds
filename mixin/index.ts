@@ -1,8 +1,8 @@
-const kids = Symbol("kids")
+const sym = Symbol("mixins")
 
 export type Class<T> = Function & { prototype:T }
 
-function setFor(c:Class<any>, sym:symbol) {
+function setFor(c:Class<any>) {
   let set = (c as any)[sym] as Set<Class<any>>
   if (set === undefined) {
     set = new Set();
@@ -17,9 +17,9 @@ export interface Options<T extends object> {
 
 export function mixin<T extends object>(c:Class<T>, m:Class<any>, options:Options<T>):void
 export function mixin(c:Class<any>, m:Iterable<Class<any>>):void
-export function mixin<T extends object>(c:Class<T>, m:Class<any>|Iterable<Class<any>>, options?:Options<T>):void {
+export function mixin<T extends object>(c:Class<T>, m2:Class<any>|Iterable<Class<any>>, options?:Options<T>):void {
   if (!("prototype" in c)) throw new TypeError("mixin target has no prototype")
-  if (!(Symbol.iterator in m)) m = [m as Class<any>]
+  const m = Symbol.iterator in m2 ? m2 : [m2]
   const overrides = new Set<any>(options?.overrides ?? [])
   const p1 = c.prototype
   for (const x of m) {
@@ -27,17 +27,20 @@ export function mixin<T extends object>(c:Class<T>, m:Class<any>|Iterable<Class<
     if (mixed2(x, c)) throw new TypeError(`can't mix ${x.name} into its parent ${c.name}`)
   }
   for (const x of m) {
-    const kidSet = setFor(x, kids)
-    kidSet.add(c)
+    const xkids = setFor(x)
+    xkids.add(c)
     const d1 = Object.getOwnPropertyDescriptors(p1)
     const d2 = Object.getOwnPropertyDescriptors(x.prototype);
     Reflect.ownKeys(d1).filter(x => !overrides.has(x)).forEach(x => delete (d2 as any)[x])
     Object.defineProperties(p1, d2)      
+    for (const k of setFor(c)) {
+      mixin(k, x, options as any)
+    }
   }
 }
 
 function mixed2<T extends object,M extends object>(targetC:Class<T>, mixin:Class<M>):boolean {
-  const set = (mixin as any)[kids] as Set<Class<any>>
+  const set = (mixin as any)[sym] as Set<Class<any>>
   if (set === undefined) return false
   if (set.has(targetC)) return true
   for (const kid of set) if (mixed2(targetC, kid)) return true
@@ -53,12 +56,12 @@ export type Augment<T extends {},K extends keyof T> =
   ? (original:(...args:A)=>R, ths:T, ...args:A)=>R 
   : never
 
-export function augment<T extends object,K extends keyof T>(c:Function & { prototype:T }, k:K, o:Augment<T,K>) {
+export function augment<T extends object,K extends keyof T>(c:Function & { prototype:T }, k:K, f:Augment<T,K>) {
   const p = c.prototype
   const d = Object.getOwnPropertyDescriptor(p, k)
-  const original = d?.value as Function
-  const f = function(this:any, ...args:any[]):any {
-    return o(original as never, this, ...args)
+  const og = d?.value
+  const n = function(this:any, ...args:any[]):any {
+    return f(og, this, ...args)
   }
-  Object.defineProperty(p, k, { ...d, value:f })
+  Object.defineProperty(p, k, { ...d, value:n });
 }
