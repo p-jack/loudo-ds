@@ -11,4 +11,5 @@ test("One", () => {
   expect(one.last).toBe("111")
   expect(one.only).toBe("111")
   expect([...one]).toStrictEqual(["111"])
+  expect([...one]).toStrictEqual(["111"])
 })
