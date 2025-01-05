@@ -15,6 +15,16 @@ export type Ear<T extends {},I = undefined> = (event:LEvent<T,I>)=>void
 
 export class OnlyError extends Error {}
 
+export interface Include {
+  start: boolean
+  end: boolean
+}
+
+export const IN_IN = { start:true, end:true }
+export const IN_EX = { start:true, end:false }
+export const EX_IN = { start:false, end:true }
+export const EX_EX = { start:false, end:false }
+
 const map = Symbol("map")
 const filter = Symbol("filter")
 
