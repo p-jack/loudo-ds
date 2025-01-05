@@ -30,6 +30,11 @@ describe("BaseMap", () => {
     expect(map.eq({ key:1, value:"1"}, { key:1, value:"2" })).toBe(false)
     expect(map.eq({ key:1, value:"1"}, { key:2, value:"1" })).toBe(false)
   })
+  test("has", () => {
+    expect(map.has({ key:1, value:"1" })).toBe(true)
+    expect(map.has({ key:2, value:"1" })).toBe(false)
+    expect(map.has({ key:200, value:"???" })).toBe(false)
+  })
   test("hasKey", () => {
     expect(map.hasKey(-1)).toBe(false)
     expect(map.hasKey(0)).toBe(true)

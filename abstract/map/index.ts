@@ -17,6 +17,10 @@ export abstract class BaseMap<K extends {},V extends {}> {
       return me.valueEq(e1.value, e2.value)
     }
   }
+  has(entry:Entry<K,V>) {
+    const v = this.get(entry.key)
+    return v !== undefined && this.valueEq(v, entry.value)
+  }
   hasKey(key:K):boolean { return this.get(key) !== undefined }
   hasAllKeys(keys:Iterable<K>) {
     for (const k of keys) if (!this.hasKey(k)) return false
