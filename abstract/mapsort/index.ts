@@ -1,5 +1,6 @@
-import { mixin } from "loudo-ds-core"
+import { mixin } from "loudo-mixin"
 import { BaseMap } from "loudo-ds-map-interfaces"
+import { Include, Sized, Stash } from "loudo-ds-core"
 
 export interface Entry<K extends {},V extends {}> {
   key: K
@@ -7,6 +8,10 @@ export interface Entry<K extends {},V extends {}> {
 }
 
 export abstract class BaseMapSort<K extends {},V extends {}> {
+  abstract get compare():(a:K,b:K)=>number
+  abstract get last():K|undefined
+  abstract reversed():Sized<Entry<K,V>>
+  abstract range(start:K, end:K, include?:Include):Stash<Entry<K,V>>
   abstract before(v:K):K|undefined
   abstract after(v:K):K|undefined
   abstract from(v:K):K|undefined
@@ -14,3 +19,9 @@ export abstract class BaseMapSort<K extends {},V extends {}> {
 }
 export interface BaseMapSort<K extends {},V extends {}> extends BaseMap<K,V> {}
 mixin(BaseMapSort, [BaseMap])
+
+export abstract class MapSortChange<K extends {},V extends {}> {
+  abstract set compare(cmp:(a:K,b:K)=>number)
+}
+export interface MapSortChange<K extends {},V extends {}> extends BaseMapSort<K,V> {}
+mixin(MapSortChange, [BaseMapSort])
