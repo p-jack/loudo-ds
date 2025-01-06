@@ -1,11 +1,6 @@
 import { mixin } from "loudo-mixin"
-import { BaseMap } from "loudo-ds-map-interfaces"
+import { BaseMap, Entry } from "loudo-ds-map-interfaces"
 import { Include, Sized, Stash } from "loudo-ds-core"
-
-export interface Entry<K extends {},V extends {}> {
-  key: K
-  value: V
-}
 
 export abstract class BaseMapSort<K extends {},V extends {}> {
   abstract get compare():(a:K,b:K)=>number
