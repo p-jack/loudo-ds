@@ -9,7 +9,7 @@ export interface Entry<K extends {},V extends {}> {
 
 export abstract class BaseMapSort<K extends {},V extends {}> {
   abstract get compare():(a:K,b:K)=>number
-  abstract get last():K|undefined
+  abstract get last():Entry<K,V>|undefined
   abstract reversed():Sized<Entry<K,V>>
   abstract range(start:K, end:K, include?:Include):Stash<Entry<K,V>>
   abstract before(v:K):K|undefined
