@@ -1,21 +1,21 @@
 import { LEvent, Mod as ModI, Loud } from "loudo-ds-core"
 
-export interface Mod<T extends {},I> {
+export interface Mod<T extends {}> {
   elements:T[]
-  at?:I
+  at?:number
 }
 
-export interface Evt<T extends {},I> {
-  cleared: boolean
-  added?: Mod<T,I>
-  removed?: Mod<T,I>
+export interface Evt<T extends {}> {
+  cleared?: number
+  added?: Mod<T>
+  removed?: Mod<T>
 }
 
-export interface Capture<T extends {},I> {
-  get():Evt<T,I>|undefined
+export interface Capture<T extends {}> {
+  get():Evt<T>|undefined
 }
 
-function mod<T extends {},I>(mod?:ModI<T,I>):Mod<T,I>|undefined {
+function mod<T extends {}>(mod?:ModI<T>):Mod<T>|undefined {
   if (mod === undefined) return undefined
   const at = mod.at
   const elements = [...mod.elements]
@@ -24,13 +24,14 @@ function mod<T extends {},I>(mod?:ModI<T,I>):Mod<T,I>|undefined {
   if (typeof(first) === "object" && "key" in first && "value" in first) {
     return { elements:elements.map((x:any) => { return { key:x.key, value:x.value }}) as never}
   }
-  if (at === undefined) return { elements }
+  if (at < 0  ) return { elements }
   return { at, elements }
 }
 
-function evt<T extends {},I>(event?:LEvent<T,I>):Evt<T,I>|undefined {
+function evt<T extends {}>(event?:LEvent<T>):Evt<T>|undefined {
   if (event === undefined) return undefined
-  const e:Evt<T,I> = { cleared: event.cleared }
+  const e:Evt<T> = {  }
+  if (event.cleared ?? 0 > 0) e.cleared = event.cleared
   const a = mod(event.added)
   if (a) e.added = a
   const r = mod(event.removed)
@@ -38,8 +39,8 @@ function evt<T extends {},I>(event?:LEvent<T,I>):Evt<T,I>|undefined {
   return e
 }
 
-export function capture<T extends {},I = undefined>(stash:Loud<T,I>):Capture<T,I> {
-  let captured:LEvent<T,I>|undefined = undefined
+export function capture<T extends {}>(stash:Loud<T>):Capture<T> {
+  let captured:LEvent<T>|undefined = undefined
   stash.hear(event => {
     captured = event
   })
