@@ -100,7 +100,7 @@ class Arr {
   get size() { return this.a.length }
   [Symbol.iterator]() { return this.a[Symbol.iterator]() }
 }
-interface Arr extends Loud<number,undefined> {}
+interface Arr extends Loud<number> {}
 mixin(Arr, [Loud])
 
 describe("Loud", () => {
@@ -125,7 +125,7 @@ describe("Loud", () => {
       }
       ds.hear(ear)
       expect(captured).not.toBeUndefined()
-      expect(captured!.cleared).toStrictEqual(false)
+      expect(captured!.cleared).toBeUndefined()
       expect(captured!.removed).toBeUndefined()
       expect(captured!.added).not.toBeUndefined()
       expect(captured!.added!.at).toBeUndefined()

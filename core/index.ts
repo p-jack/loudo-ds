@@ -1,17 +1,17 @@
 import { mixin } from "loudo-mixin"
 
-export interface Mod<T extends {},I = undefined> {
+export interface Mod<T extends {}> {
   elements: Stash<T>
-  at: I
+  at: number
 }
 
-export interface LEvent<T extends {},I = undefined> {
-  readonly cleared:boolean
-  readonly added?:Mod<T,I>
-  readonly removed?:Mod<T,I>
+export interface LEvent<T extends {}> {
+  readonly cleared?:number
+  readonly added?:Mod<T>
+  readonly removed?:Mod<T>
 }
 
-export type Ear<T extends {},I = undefined> = (event:LEvent<T,I>)=>void
+export type Ear<T extends {}> = (event:LEvent<T>)=>void
 
 export class OnlyError extends Error {}
 
@@ -177,8 +177,8 @@ export function sized<T extends {}>(gen:Iterable<T>|(()=>Iterator<T>), size:()=>
 }
 
 interface Held {
-  ds:Loud<any,any>
-  ear:Ear<any,any>
+  ds:Loud<any>
+  ear:Ear<any>
 }
 
 /* v8 ignore next 3 */
@@ -189,32 +189,32 @@ const registry = new FinalizationRegistry((held:Held) => {
 const earSet = Symbol("earSet")
 const ears = Symbol("ears")
 
-export abstract class Loud<T extends {},I = undefined> {
+export abstract class Loud<T extends {}> {
 
-  private [earSet]:Set<Ear<T,I>>|undefined
+  private [earSet]:Set<Ear<T>>|undefined
   private get [ears]() {
     if (this[earSet] === undefined) { this[earSet] = new Set() }
     return this[earSet]
   }
 
-  protected abstract get firstIndex():I
+  protected abstract get firstIndex():number
 
-  hear(ear:Ear<T,I>) {
+  hear(ear:Ear<T>) {
     this[ears].add(ear)
     if (this.empty) return
-    ear({ cleared:false, added:{ elements:this, at:this.firstIndex }})
+    ear({ added:{ elements:this, at:this.firstIndex }})
   }
 
-  unhear(ear:Ear<T,I>) {
+  unhear(ear:Ear<T>) {
     this[ears].delete(ear)
   }
 
-  hearing(ear:Ear<T,I>) {
+  hearing(ear:Ear<T>) {
     return this[ears].has(ear)
   }
 
   /* v8 ignore next 6 */
-  protected fire(event:LEvent<T,I>) {
+  protected fire(event:LEvent<T>) {
     const set = this[earSet]
     if (set === undefined) return
     for (const x of set) { x(event) }
@@ -222,9 +222,9 @@ export abstract class Loud<T extends {},I = undefined> {
   }
 
   /* v8 ignore next 9 */
-  protected tether<T2 extends {},I2>(ds:Loud<T2,I2>, ear:(me:typeof this, event:LEvent<T2,I2>)=>void) {
+  protected tether<T2 extends {}>(ds:Loud<T2>, ear:(me:typeof this, event:LEvent<T2>)=>void) {
     const w = new WeakRef(this)
-    const ear2 = (event:LEvent<T2,I2>) => {
+    const ear2 = (event:LEvent<T2>) => {
       const s = w.deref()
       if (s !== undefined) ear(s, event)
     }
@@ -233,5 +233,5 @@ export abstract class Loud<T extends {},I = undefined> {
   }
 
 }
-export interface Loud<T,I> extends Sized<T> {}
+export interface Loud<T> extends Sized<T> {}
 mixin(Loud, [Sized])
