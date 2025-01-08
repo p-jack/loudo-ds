@@ -7,10 +7,10 @@ export abstract class BaseMapSort<K extends {},V extends {}> {
   abstract get last():Entry<K,V>|undefined
   abstract reversed():Sized<Entry<K,V>>
   abstract range(start:K, end:K, include?:Include):Stash<Entry<K,V>>
-  abstract before(v:K):K|undefined
-  abstract after(v:K):K|undefined
-  abstract from(v:K):K|undefined
-  abstract to(v:K):K|undefined
+  abstract before(v:K):Entry<K,V>|undefined
+  abstract after(v:K):Entry<K,V>|undefined
+  abstract from(v:K):Entry<K,V>|undefined
+  abstract to(v:K):Entry<K,V>|undefined
 }
 export interface BaseMapSort<K extends {},V extends {}> extends BaseMap<K,V> {}
 mixin(BaseMapSort, [BaseMap])
